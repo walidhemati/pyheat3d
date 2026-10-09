@@ -12,7 +12,7 @@ import glob
 import os
 import site
 import warnings
-from functools import lru_cache
+from functools import cache
 from importlib import resources
 
 import numpy as np
@@ -68,12 +68,12 @@ TB2D = {
 TB2D_DEFAULT = {"R": 2, "WARPS": 2, "ZCH": 256}
 
 
-@lru_cache(maxsize=None)
+@cache
 def _source() -> str:
     return resources.files("pyheat3d.backends").joinpath("stencil.cu").read_text()
 
 
-@lru_cache(maxsize=None)
+@cache
 def _module(storage: str, periodic: bool, **macros: int) -> cp.RawModule:
     opts = ["--std=c++14", f"-DSTORAGE={_STORAGE_CODE[storage]}", f"-DPERIODIC={int(periodic)}"]
     opts += [f"-D{k}={v}" for k, v in sorted(macros.items())]

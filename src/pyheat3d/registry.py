@@ -9,7 +9,7 @@ from __future__ import annotations
 import ctypes
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from functools import lru_cache
+from functools import cache, lru_cache
 
 import numpy as np
 
@@ -176,7 +176,7 @@ def cuda_available() -> bool:
     return False
 
 
-@lru_cache(maxsize=None)
+@cache
 def availability(key: str) -> tuple[bool, str]:
     """``(ok, reason)``: whether a variant can run here."""
     var = VARIANTS[key]

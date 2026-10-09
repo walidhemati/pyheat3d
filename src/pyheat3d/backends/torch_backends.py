@@ -116,6 +116,12 @@ class TorchEagerStepper(_TorchStepper):
 
 _COMPILED: dict[tuple, object] = {}
 
+# dynamo specialises on shapes and on the float coefficients; every (shape, c0, c1) combination
+# is one graph. Allow enough of them for test sweeps (benchmarks use one per problem size).
+for _name in ("recompile_limit", "cache_size_limit"):
+    if hasattr(torch._dynamo.config, _name):
+        setattr(torch._dynamo.config, _name, 256)
+
 
 class TorchCompileStepper(_TorchStepper):
     """Rung 2: the same expression traced by ``torch.compile``/Inductor into one fused kernel."""

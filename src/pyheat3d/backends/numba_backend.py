@@ -9,7 +9,7 @@ import numpy as np
 # numba-cuda 0.30 still references ``np.row_stack``, removed in NumPy 2.5. Restore the alias
 # (it was always identical to ``np.vstack``) before numba.cuda builds its typing registry.
 if not hasattr(np, "row_stack"):  # pragma: no cover - depends on the installed NumPy
-    np.row_stack = np.vstack  # type: ignore[attr-defined]
+    setattr(np, "row_stack", np.vstack)  # noqa: B010
 
 from numba import cuda  # noqa: E402
 from numba.core.errors import NumbaPerformanceWarning  # noqa: E402

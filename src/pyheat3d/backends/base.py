@@ -67,8 +67,8 @@ class Stepper(ABC):
     def get(self) -> np.ndarray:
         """Return the current state as a host NumPy array (float32 or float64)."""
 
-    def synchronize(self) -> None:
+    def synchronize(self) -> None:  # noqa: B027 - no-op for synchronous (CPU) backends
         """Block until all queued device work has finished."""
 
-    def close(self) -> None:
+    def close(self) -> None:  # noqa: B027 - optional hook
         """Release device memory (optional)."""
