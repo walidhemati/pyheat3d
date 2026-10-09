@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyheat3d"
+version = "0.1.0"
+description = "Explicit heat equation and Jacobi stencils at the GPU memory roofline, from Python."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Walid Hemati" }]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24"]
+keywords = ["stencil", "heat equation", "jacobi", "roofline", "gpu", "triton", "warp", "cupy", "numba"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Environment :: GPU :: NVIDIA CUDA",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.3"]
+triton = ["torch>=2.3", "triton>=3.0"]
+warp = ["warp-lang>=1.5"]
+numba = ["numba>=0.60", "numba-cuda>=0.10"]
+cupy = ["cupy-cuda12x>=13"]
+gpu = [
+    "torch>=2.3",
+    "triton>=3.0",
+    "warp-lang>=1.5",
+    "numba>=0.60",
+    "numba-cuda>=0.10",
+    "cupy-cuda12x>=13",
+]
+figures = ["matplotlib>=3.7", "pillow>=9"]
+dev = ["pytest>=7", "ruff>=0.5", "matplotlib>=3.7", "scipy>=1.10"]
+
+[project.scripts]
+pyheat3d = "pyheat3d.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/walidhemati/pyheat3d"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyheat3d"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "NPY"]
+ignore = ["E741"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["gpu: needs a CUDA GPU (auto-skipped without one)", "slow: longer validation runs"]
+addopts = "-ra"
