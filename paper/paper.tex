@@ -349,7 +349,8 @@ The CUDA C kernel \code{\bestTBThreeDVariant} ($k=\bestTBThreeDK$) delivers
 Under the minimal model it moves \bestTBThreeDBW\,GB/s (\bestTBThreeDPctCopy\% of copy). With the
 halo over-fetch of overlapped tiling the estimate is \bestTBThreeDHaloBW\,GB/s
 (\bestTBThreeDHaloBytes\,B per update). A single-step kernel would need
-\bestTBThreeDEquiv\,GB/s to match the rate, which no DRAM on this GPU provides. In 2D,
+\bestTBThreeDEquiv\,GB/s of DRAM bandwidth to match the rate (the specification is
+\specBW\,GB/s). In 2D,
 \code{\bestTBTwoDVariant} ($k=\bestTBTwoDK$) reaches \bestTBTwoDGLUPS\GLUPS{}
 (\bestTBTwoDOverRoof$\times$ the single-step roof) while using \bestTBTwoDBW\,GB/s. The gain
 saturates with $k$: redundant halo work grows as $(T-2k)^{-1}$ per tiled dimension, the
@@ -408,7 +409,8 @@ bandwidth should transfer better.
 (ii) Laptop GPUs throttle with temperature and power. Each run records SM clock, temperature
 and power, and the final benchmark runs serially on an idle GPU.
 \ifprovisional (iii) The numbers in this version were measured while other jobs shared the GPU
-and are pessimistic. \fi
+and are pessimistic: the copy bandwidth measured at the start of that run was only
+\measuredCopyBW\,GB/s instead of \copyBW\,GB/s. \fi
 (iv) The CUDA C reference is compiled by NVRTC, not \code{nvcc}. Both use the same NVVM and
 ptxas pipeline,
 but default flags differ.
