@@ -70,6 +70,19 @@ TB2D = {
 TB2D_DEFAULT = {"R": 2, "WARPS": 2, "ZCH": 256}
 
 
+#: aim for at least this many resident threads when choosing the march-chunk length, so small
+#: grids still fill the 40 SMs (shorter chunks cost (ZCH + 2K) / ZCH redundant planes)
+TARGET_THREADS = 48 * 1024
+
+
+def chunk_length(n_march: int, columns_threads: int, zch_max: int, k: int) -> int:
+    """Power-of-two march-chunk length giving >= TARGET_THREADS threads (>= 4K, <= zch_max)."""
+    want_chunks = max(1, -(-TARGET_THREADS // max(columns_threads, 1)))
+    z = -(-n_march // want_chunks)
+    z = 1 << max(0, (z - 1).bit_length())  # round up to a power of two
+    return int(max(min(z, zch_max), 4 * k, 8))
+
+
 @cache
 def _source() -> str:
     return resources.files("pyheat3d.backends").joinpath("stencil.cu").read_text()
@@ -152,6 +165,8 @@ class CupyStepper(Stepper):
             if self.dims == 3:
                 m = dict(TB3D.get(K, TB3D_DEFAULT), K=K)
                 ox, oy = 32 - 2 * K, m["TYT"] * m["R"] - 2 * K
+                cols = ((nx + ox - 1) // ox) * ((ny + oy - 1) // oy) * 32 * m["TYT"]
+                m["ZCH"] = chunk_length(sh[0], cols, m["ZCH"], K)
                 self.main = (kernel("tb3d", st, p, **m),
                              ((nx + ox - 1) // ox, (ny + oy - 1) // oy,
                               (sh[0] + m["ZCH"] - 1) // m["ZCH"]), (32, m["TYT"]))
@@ -159,6 +174,7 @@ class CupyStepper(Stepper):
                 m = dict(TB2D.get(K, TB2D_DEFAULT), K=K)
                 ox = 32 * m["R"] - 2 * K
                 strips = (nx + ox - 1) // ox
+                m["ZCH"] = chunk_length(ny, strips * 32, m["ZCH"], K)
                 self.main = (kernel("tb2d", st, p, **m),
                              ((strips + m["WARPS"] - 1) // m["WARPS"],
                               (ny + m["ZCH"] - 1) // m["ZCH"]), (32, m["WARPS"]))

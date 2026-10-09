@@ -33,6 +33,15 @@ PLANS: dict[str, dict[str, Any]] = {
         "provisional": True,
         "out": "quick.json",
     },
+    "dev": {  # provisional numbers on a shared GPU: every size that fits in < 1 GB
+        "sizes": {2: [512, 1024, 2048, 4096, 8192], 3: [32, 64, 128, 256, 320]},
+        "cpu_max": {2: 2048, 3: 128},
+        "min_time": 0.1,
+        "repeats": 5,
+        "mem_limit_GB": 0.9,
+        "provisional": True,
+        "out": "dev-provisional.json",
+    },
     "full": {
         "sizes": {2: [1024, 2048, 4096, 8192, 16384], 3: [64, 128, 256, 384, 512]},
         "cpu_max": {2: 4096, 3: 256},
@@ -167,6 +176,7 @@ def time_variant(key: str, u0: np.ndarray, min_time: float, repeats: int,
             times.append(time.perf_counter() - t0)
         final = st.get()
         finite = bool(np.isfinite(final).all())
+        st_tile = dict(getattr(st, "tile", {}))
     finally:
         st.close()
         del st
@@ -210,17 +220,15 @@ def time_variant(key: str, u0: np.ndarray, min_time: float, repeats: int,
         # throughput expressed as the bandwidth a single-step kernel would need (NOT a DRAM rate)
         rec["single_step_equiv_GBs"] = med * traffic.minimal_bytes(var.bytes_per_value, 1) / 1e3
         if var.backend == "cupy-cuda-c":
-            from .backends import cupy_backend as cb
-
+            cfg = st_tile
             if dims == 3:
-                cfg = cb.TB3D.get(k, cb.TB3D_DEFAULT)
                 tx, ty, zch = 32, cfg["TYT"] * cfg["R"], cfg["ZCH"]
             else:
-                cfg = cb.TB2D.get(k, cb.TB2D_DEFAULT)
                 tx, ty, zch = 32 * cfg["R"], 1, cfg["ZCH"]
             hb = traffic.tb_model_bytes(dims, k, var.bytes_per_value, tx, ty, zch)
             rec["halo_model_bytes_per_unit"] = hb
             rec["halo_model_GBs"] = med * hb / 1e3
+            rec["tile"] = cfg
         rec["notes"] += (f"; temporal blocking: per-update traffic is 1/{k} of single-step, "
                          "so its roofline is k times higher")
     return rec

@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use pyheat3d, please cite it as below."
+title: "pyheat3d: explicit heat-equation and Jacobi stencils at the GPU memory roofline, from Python"
+abstract: >-
+  Explicit FTCS heat equation and Jacobi iteration (5-point 2D, 7-point 3D stencils) implemented
+  across NumPy, PyTorch eager, torch.compile, Triton, NVIDIA Warp, Numba-CUDA and hand-written
+  CUDA C (CuPy/NVRTC), validated against analytic solutions and benchmarked against a measured
+  memory-bandwidth roofline, including temporal blocking.
+type: software
+authors:
+  - family-names: Hemati
+    given-names: Walid
+    affiliation: Independent researcher
+license: MIT
+version: 0.1.0
+date-released: "2026-10-09"
+repository-code: "https://github.com/walidhemati/pyheat3d"
+keywords:
+  - stencil
+  - heat equation
+  - Jacobi iteration
+  - roofline
+  - temporal blocking
+  - GPU
+  - Triton
+  - Python

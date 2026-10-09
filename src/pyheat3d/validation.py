@@ -250,8 +250,10 @@ def run_all(quick: bool = False) -> dict[str, Any]:
         res["spatial"] = [
             spatial_convergence(2, [17, 33, 65, 129, 257]),
             spatial_convergence(3, [9, 17, 33, 65, 129]),
-            spatial_convergence(2, [16, 32, 64, 128, 256], bc="periodic", r=0.1, t_final=0.002),
-            spatial_convergence(3, [8, 16, 32, 64, 128], bc="periodic", r=0.1, t_final=0.002),
+            # periodic modes have twice the wavenumber: start at finer grids (asymptotic range)
+            spatial_convergence(2, [32, 64, 128, 256, 512], bc="periodic", r=0.05,
+                                t_final=0.005),
+            spatial_convergence(3, [16, 32, 64, 128], bc="periodic", r=0.05, t_final=0.005),
         ]
         res["temporal"] = [
             temporal_convergence(2, 65, [1024, 2048, 4096, 8192, 16384]),

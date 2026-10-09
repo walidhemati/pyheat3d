@@ -1,0 +1,28 @@
+{
+ "machine": {
+  "gpu": "NVIDIA GeForce RTX 3070 Laptop GPU",
+  "driver": "595.91.07",
+  "cpu": null,
+  "python": "3.13.2",
+  "numpy": "2.5.3",
+  "torch": "2.7.0+cu126",
+  "triton": "3.3.0",
+  "warp": "1.18.0",
+  "cupy": "13.5.1",
+  "numba": "0.68.0",
+  "numba_cuda": "0.30.4",
+  "date": "2026-10-09T22:31:26+02:00"
+ },
+ "provisional": true,
+ "copy_bytes": 134217728,
+ "measured_copy_bandwidth_GBs": 169.90893201061968,
+ "reference_copy_bandwidth_GBs": 361.0,
+ "spec_bandwidth_GBs": 448.0,
+ "fp32_fma_tflops": 8.678469253578541,
+ "gpu_state": {
+  "sm_clock_MHz": 1755,
+  "mem_clock_MHz": 6001,
+  "temp_C": 60,
+  "power_W": 58.6
+ }
+}
