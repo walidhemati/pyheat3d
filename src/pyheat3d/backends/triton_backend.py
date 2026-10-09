@@ -125,7 +125,7 @@ class TritonStepper(Stepper):
     storage = "float32"
     BY2, BX2, WARPS2 = 8, 128, 4
     BY3, BX3, WARPS3 = 4, 64, 4
-    BYZ, BXZ, WARPSZ, ZCH = 8, 64, 4, 32
+    BYZ, BXZ, WARPSZ, ZCH = 4, 64, 4, 8
 
     def __init__(self, u0: np.ndarray, stencil: Stencil, source: np.ndarray | None = None):
         super().__init__(u0, stencil, source)

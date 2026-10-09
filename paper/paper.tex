@@ -128,7 +128,8 @@ Triton kernels. Triton~\cite{tillet2019triton} lets one write block-level kernel
 leaves intra-block scheduling to the compiler. Warp~\cite{macklin2022warp} and
 Numba~\cite{lam2015numba} compile SIMT kernels written in a Python subset. CuPy~\cite{okuta2017cupy}
 provides NumPy-compatible arrays and runtime compilation of CUDA C through NVRTC. We use the
-last route as our ``hand-written CUDA C'' reference, because the test machine has no \code{nvcc}.
+last route as our ``hand-written CUDA C'' reference: the kernels are compiled at run time by NVRTC, so the
+package needs no CUDA toolkit or \code{nvcc} at install time.
 
 \section{Method}
 \subsection{Physics and numerics}
@@ -408,7 +409,8 @@ bandwidth should transfer better.
 and power, and the final benchmark runs serially on an idle GPU.
 \ifprovisional (iii) The numbers in this version were measured while other jobs shared the GPU
 and are pessimistic. \fi
-(iv) The CUDA C reference is compiled by NVRTC, not \code{nvcc}. Both share the same back end,
+(iv) The CUDA C reference is compiled by NVRTC, not \code{nvcc}. Both use the same NVVM and
+ptxas pipeline,
 but default flags differ.
 (v) The minimal traffic model ignores halo re-reads, and on small grids part of the working set
 stays in the 4\,MB L2. Effective bandwidths for small grids can therefore exceed what DRAM

@@ -16,10 +16,10 @@ solutions.**
 <!-- headline:start -->
 > **Provisional numbers** (`results/dev-provisional.json`, measured on a shared GPU during development; the final numbers come from `bench/run.py --full` on an idle GPU).
 >
-> **3D 320^3, single step:** `triton/tile` **32.3 GLUPS** = 258 GB/s = **72% of the 361 GB/s copy bandwidth** (58% of the 448 GB/s spec).<br>
-> **3D temporal blocking (k=4):** `cupy-cuda-c/tb4` **73.9 GLUPS**, 1.64x the single-step roofline of 45.1 GLUPS while moving an estimated 148 GB/s (minimal model) to 194 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
-> **2D 8192^2, single step:** `triton/tile` **16.2 GLUPS** = 130 GB/s = **36% of the 361 GB/s copy bandwidth** (29% of the 448 GB/s spec).<br>
-> **2D temporal blocking (k=8):** `cupy-cuda-c/tb8` **76.7 GLUPS**, 1.70x the single-step roofline of 45.1 GLUPS while moving an estimated 77 GB/s (minimal model) to 93 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
+> **3D 320^3, single step:** `triton/zmarch` **18.5 GLUPS** = 148 GB/s = **41% of the 361 GB/s copy bandwidth** (33% of the 448 GB/s spec).<br>
+> **3D temporal blocking (k=3):** `cupy-cuda-c/tb3` **22.5 GLUPS**, 0.50x the single-step roofline of 45.1 GLUPS while moving an estimated 60 GB/s (minimal model) to 80 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
+> **2D 8192^2, single step:** `cupy-cuda-c/ymarch` **32.7 GLUPS** = 262 GB/s = **72% of the 361 GB/s copy bandwidth** (58% of the 448 GB/s spec).<br>
+> **2D temporal blocking (k=8):** `cupy-cuda-c/tb8` **120.1 GLUPS**, 2.66x the single-step roofline of 45.1 GLUPS while moving an estimated 120 GB/s (minimal model) to 145 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
 > NVIDIA GeForce RTX 3070 Laptop GPU, 2026-10-09.
 <!-- headline:end -->
 
@@ -90,40 +90,40 @@ k).
 <!-- perf-table:start -->
 | dims | variant | storage | k | GLUPS | B/update | GB/s | % copy | % spec |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| 3D 320^3 | `cupy-cuda-c/tb4` | float32 | 4 | 73.95 | 2 | 148 | 41 | 33 |
-| 3D 320^3 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 66.78 | 1 | 67 | 18 | 15 |
-| 3D 320^3 | `cupy-cuda-c/tb3` | float32 | 3 | 66.51 | 2.7 | 177 | 49 | 40 |
-| 3D 320^3 | `cupy-cuda-c/tb2` | float32 | 2 | 54.61 | 4 | 218 | 61 | 49 |
-| 3D 320^3 | `triton/zmarch-bf16` | bfloat16 | 1 | 51.41 | 4 | 206 | 57 | 46 |
-| 3D 320^3 | `triton/tile-bf16` | bfloat16 | 1 | 43.16 | 4 | 173 | 48 | 39 |
-| 3D 320^3 | `triton/tile-fp16` | float16 | 1 | 42.19 | 4 | 169 | 47 | 38 |
-| 3D 320^3 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 37.33 | 4 | 149 | 41 | 33 |
-| 3D 320^3 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 37.19 | 4 | 149 | 41 | 33 |
-| 3D 320^3 | `triton/zmarch-fp16` | float16 | 1 | 36.17 | 4 | 145 | 40 | 32 |
-| 3D 320^3 | `triton/tile` | float32 | 1 | 32.27 | 8 | 258 | 72 | 58 |
-| 3D 320^3 | `warp/zmarch` | float32 | 1 | 29.87 | 8 | 239 | 66 | 53 |
-| 3D 320^3 | `numba/zmarch` | float32 | 1 | 29.68 | 8 | 237 | 66 | 53 |
-| 3D 320^3 | `cupy-cuda-c/zmarch` | float32 | 1 | 29.66 | 8 | 237 | 66 | 53 |
-| 3D 320^3 | `cupy-cuda-c/naive` | float32 | 1 | 28.77 | 8 | 230 | 64 | 51 |
-| 3D 320^3 | `torch-compile/inductor` | float32 | 1 | 28.71 | 8 | 230 | 64 | 51 |
-| 3D 320^3 | `numba/naive` | float32 | 1 | 17.78 | 8 | 142 | 39 | 32 |
-| 3D 320^3 | `triton/zmarch` | float32 | 1 | 17.62 | 8 | 141 | 39 | 31 |
-| 3D 320^3 | `warp/naive` | float32 | 1 | 15.33 | 8 | 123 | 34 | 27 |
-| 3D 320^3 | `torch-eager/slicing` | float32 | 1 | 3.62 | 8 | 29 | 8 | 6 |
-| 2D 8192^2 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 77.25 | 1 | 77 | 21 | 17 |
-| 2D 8192^2 | `cupy-cuda-c/tb8` | float32 | 8 | 76.66 | 1 | 77 | 21 | 17 |
-| 2D 8192^2 | `cupy-cuda-c/tb4` | float32 | 4 | 59.98 | 2 | 120 | 33 | 27 |
-| 2D 8192^2 | `cupy-cuda-c/tb3` | float32 | 3 | 45.06 | 2.7 | 120 | 33 | 27 |
-| 2D 8192^2 | `cupy-cuda-c/tb2` | float32 | 2 | 30.59 | 4 | 122 | 34 | 27 |
-| 2D 8192^2 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 30.22 | 4 | 121 | 33 | 27 |
-| 2D 8192^2 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 28.98 | 4 | 116 | 32 | 26 |
-| 2D 8192^2 | `triton/tile-bf16` | bfloat16 | 1 | 26.98 | 4 | 108 | 30 | 24 |
-| 2D 8192^2 | `triton/tile-fp16` | float16 | 1 | 26.24 | 4 | 105 | 29 | 23 |
-| 2D 8192^2 | `triton/tile` | float32 | 1 | 16.21 | 8 | 130 | 36 | 29 |
-| 2D 8192^2 | `cupy-cuda-c/naive` | float32 | 1 | 16.00 | 8 | 128 | 35 | 29 |
-| 2D 8192^2 | `cupy-cuda-c/ymarch` | float32 | 1 | 15.20 | 8 | 122 | 34 | 27 |
-| 2D 8192^2 | `numba/naive` | float32 | 1 | 15.03 | 8 | 120 | 33 | 27 |
-| 2D 8192^2 | `warp/naive` | float32 | 1 | 14.63 | 8 | 117 | 32 | 26 |
+| 3D 320^3 | `triton/zmarch-fp16` | float16 | 1 | 36.95 | 4 | 148 | 41 | 33 |
+| 3D 320^3 | `triton/tile-fp16` | float16 | 1 | 27.83 | 4 | 111 | 31 | 25 |
+| 3D 320^3 | `triton/tile-bf16` | bfloat16 | 1 | 25.97 | 4 | 104 | 29 | 23 |
+| 3D 320^3 | `cupy-cuda-c/tb3` | float32 | 3 | 22.48 | 2.7 | 60 | 17 | 13 |
+| 3D 320^3 | `cupy-cuda-c/tb4` | float32 | 4 | 21.24 | 2 | 42 | 12 | 9 |
+| 3D 320^3 | `triton/zmarch-bf16` | bfloat16 | 1 | 19.76 | 4 | 79 | 22 | 18 |
+| 3D 320^3 | `triton/zmarch` | float32 | 1 | 18.48 | 8 | 148 | 41 | 33 |
+| 3D 320^3 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 18.26 | 1 | 18 | 5 | 4 |
+| 3D 320^3 | `cupy-cuda-c/tb2` | float32 | 2 | 17.72 | 4 | 71 | 20 | 16 |
+| 3D 320^3 | `triton/tile` | float32 | 1 | 16.63 | 8 | 133 | 37 | 30 |
+| 3D 320^3 | `torch-compile/inductor` | float32 | 1 | 15.60 | 8 | 125 | 35 | 28 |
+| 3D 320^3 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 13.94 | 4 | 56 | 15 | 12 |
+| 3D 320^3 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 13.14 | 4 | 53 | 15 | 12 |
+| 3D 320^3 | `cupy-cuda-c/naive` | float32 | 1 | 10.12 | 8 | 81 | 22 | 18 |
+| 3D 320^3 | `numba/zmarch` | float32 | 1 | 9.50 | 8 | 76 | 21 | 17 |
+| 3D 320^3 | `cupy-cuda-c/zmarch` | float32 | 1 | 9.43 | 8 | 75 | 21 | 17 |
+| 3D 320^3 | `warp/zmarch` | float32 | 1 | 9.39 | 8 | 75 | 21 | 17 |
+| 3D 320^3 | `numba/naive` | float32 | 1 | 6.23 | 8 | 50 | 14 | 11 |
+| 3D 320^3 | `warp/naive` | float32 | 1 | 5.36 | 8 | 43 | 12 | 10 |
+| 3D 320^3 | `torch-eager/slicing` | float32 | 1 | 1.72 | 8 | 14 | 4 | 3 |
+| 2D 8192^2 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 146.16 | 1 | 146 | 40 | 33 |
+| 2D 8192^2 | `cupy-cuda-c/tb8` | float32 | 8 | 120.13 | 1 | 120 | 33 | 27 |
+| 2D 8192^2 | `cupy-cuda-c/tb4` | float32 | 4 | 115.42 | 2 | 231 | 64 | 52 |
+| 2D 8192^2 | `cupy-cuda-c/tb3` | float32 | 3 | 89.94 | 2.7 | 240 | 66 | 54 |
+| 2D 8192^2 | `cupy-cuda-c/tb2` | float32 | 2 | 74.60 | 4 | 298 | 83 | 67 |
+| 2D 8192^2 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 53.52 | 4 | 214 | 59 | 48 |
+| 2D 8192^2 | `triton/tile-fp16` | float16 | 1 | 50.74 | 4 | 203 | 56 | 45 |
+| 2D 8192^2 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 50.43 | 4 | 202 | 56 | 45 |
+| 2D 8192^2 | `cupy-cuda-c/ymarch` | float32 | 1 | 32.72 | 8 | 262 | 72 | 58 |
+| 2D 8192^2 | `triton/tile-bf16` | bfloat16 | 1 | 27.50 | 4 | 110 | 30 | 25 |
+| 2D 8192^2 | `triton/tile` | float32 | 1 | 19.69 | 8 | 158 | 44 | 35 |
+| 2D 8192^2 | `cupy-cuda-c/naive` | float32 | 1 | 19.10 | 8 | 153 | 42 | 34 |
+| 2D 8192^2 | `warp/naive` | float32 | 1 | 15.36 | 8 | 123 | 34 | 27 |
+| 2D 8192^2 | `numba/naive` | float32 | 1 | 13.14 | 8 | 105 | 29 | 23 |
 
 Source: `results/dev-provisional.json` (provisional). GB/s uses the minimal traffic model (2 x bytes per value / k per update), so it is a lower bound on real DRAM traffic.
 <!-- perf-table:end -->

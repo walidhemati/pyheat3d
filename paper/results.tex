@@ -14,105 +14,105 @@
 \newcommand{\numpyVersion}{2.5.3}
 \newcommand{\copyBW}{361}
 \newcommand{\specBW}{448}
-\newcommand{\measuredCopyBW}{142}
+\newcommand{\measuredCopyBW}{163}
 \newcommand{\rooflineFP}{45.1}
 \newcommand{\rooflineHalf}{90.2}
 \newcommand{\nRuns}{184}
 \newcommand{\sizeTwoD}{8192^2}
-\newcommand{\bestSingleTwoDVariant}{triton/tile}
-\newcommand{\bestSingleTwoDGLUPS}{16.2}
-\newcommand{\bestSingleTwoDBW}{130}
-\newcommand{\bestSingleTwoDPctCopy}{36}
-\newcommand{\bestSingleTwoDPctSpec}{29}
-\newcommand{\bestSingleTwoDMin}{16.1}
-\newcommand{\bestSingleTwoDMax}{16.5}
+\newcommand{\bestSingleTwoDVariant}{cupy-cuda-c/ymarch}
+\newcommand{\bestSingleTwoDGLUPS}{32.7}
+\newcommand{\bestSingleTwoDBW}{262}
+\newcommand{\bestSingleTwoDPctCopy}{72}
+\newcommand{\bestSingleTwoDPctSpec}{58}
+\newcommand{\bestSingleTwoDMin}{32.4}
+\newcommand{\bestSingleTwoDMax}{32.8}
 \newcommand{\bestTBTwoDVariant}{cupy-cuda-c/tb8}
-\newcommand{\bestTBTwoDGLUPS}{76.7}
-\newcommand{\bestTBTwoDBW}{77}
-\newcommand{\bestTBTwoDPctCopy}{21}
-\newcommand{\bestTBTwoDPctSpec}{17}
-\newcommand{\bestTBTwoDMin}{71.8}
-\newcommand{\bestTBTwoDMax}{79.2}
-\newcommand{\bestLowTwoDVariant}{cupy-cuda-c/naive-fp16}
-\newcommand{\bestLowTwoDGLUPS}{30.2}
-\newcommand{\bestLowTwoDBW}{121}
-\newcommand{\bestLowTwoDPctCopy}{33}
-\newcommand{\bestLowTwoDPctSpec}{27}
-\newcommand{\bestLowTwoDMin}{29.7}
-\newcommand{\bestLowTwoDMax}{32.0}
+\newcommand{\bestTBTwoDGLUPS}{120.1}
+\newcommand{\bestTBTwoDBW}{120}
+\newcommand{\bestTBTwoDPctCopy}{33}
+\newcommand{\bestTBTwoDPctSpec}{27}
+\newcommand{\bestTBTwoDMin}{112.4}
+\newcommand{\bestTBTwoDMax}{122.9}
+\newcommand{\bestLowTwoDVariant}{cupy-cuda-c/naive-bf16}
+\newcommand{\bestLowTwoDGLUPS}{53.5}
+\newcommand{\bestLowTwoDBW}{214}
+\newcommand{\bestLowTwoDPctCopy}{59}
+\newcommand{\bestLowTwoDPctSpec}{48}
+\newcommand{\bestLowTwoDMin}{52.5}
+\newcommand{\bestLowTwoDMax}{56.6}
 \newcommand{\bestTBTwoDK}{8}
-\newcommand{\bestTBTwoDEquiv}{613}
-\newcommand{\bestTBTwoDOverRoof}{1.70}
-\newcommand{\bestTBTwoDHaloBW}{93}
+\newcommand{\bestTBTwoDEquiv}{961}
+\newcommand{\bestTBTwoDOverRoof}{2.66}
+\newcommand{\bestTBTwoDHaloBW}{145}
 \newcommand{\bestTBTwoDHaloBytes}{1.21}
-\newcommand{\numpyTwoDGLUPS}{0.472}
+\newcommand{\numpyTwoDGLUPS}{0.646}
 \newcommand{\numpyTwoDSize}{512^2}
-\newcommand{\speedupNumpyTwoD}{50}
+\newcommand{\speedupNumpyTwoD}{47}
 \newcommand{\sizeThreeD}{320^3}
-\newcommand{\bestSingleThreeDVariant}{triton/tile}
-\newcommand{\bestSingleThreeDGLUPS}{32.3}
-\newcommand{\bestSingleThreeDBW}{258}
-\newcommand{\bestSingleThreeDPctCopy}{72}
-\newcommand{\bestSingleThreeDPctSpec}{58}
-\newcommand{\bestSingleThreeDMin}{32.2}
-\newcommand{\bestSingleThreeDMax}{32.4}
-\newcommand{\bestTBThreeDVariant}{cupy-cuda-c/tb4}
-\newcommand{\bestTBThreeDGLUPS}{73.9}
-\newcommand{\bestTBThreeDBW}{148}
-\newcommand{\bestTBThreeDPctCopy}{41}
-\newcommand{\bestTBThreeDPctSpec}{33}
-\newcommand{\bestTBThreeDMin}{73.6}
-\newcommand{\bestTBThreeDMax}{74.6}
-\newcommand{\bestLowThreeDVariant}{triton/zmarch-bf16}
-\newcommand{\bestLowThreeDGLUPS}{51.4}
-\newcommand{\bestLowThreeDBW}{206}
-\newcommand{\bestLowThreeDPctCopy}{57}
-\newcommand{\bestLowThreeDPctSpec}{46}
-\newcommand{\bestLowThreeDMin}{51.2}
-\newcommand{\bestLowThreeDMax}{56.7}
-\newcommand{\bestTBThreeDK}{4}
-\newcommand{\bestTBThreeDEquiv}{592}
-\newcommand{\bestTBThreeDOverRoof}{1.64}
-\newcommand{\bestTBThreeDHaloBW}{194}
-\newcommand{\bestTBThreeDHaloBytes}{2.62}
-\newcommand{\numpyThreeDGLUPS}{0.286}
+\newcommand{\bestSingleThreeDVariant}{triton/zmarch}
+\newcommand{\bestSingleThreeDGLUPS}{18.5}
+\newcommand{\bestSingleThreeDBW}{148}
+\newcommand{\bestSingleThreeDPctCopy}{41}
+\newcommand{\bestSingleThreeDPctSpec}{33}
+\newcommand{\bestSingleThreeDMin}{18.5}
+\newcommand{\bestSingleThreeDMax}{18.7}
+\newcommand{\bestTBThreeDVariant}{cupy-cuda-c/tb3}
+\newcommand{\bestTBThreeDGLUPS}{22.5}
+\newcommand{\bestTBThreeDBW}{60}
+\newcommand{\bestTBThreeDPctCopy}{17}
+\newcommand{\bestTBThreeDPctSpec}{13}
+\newcommand{\bestTBThreeDMin}{22.4}
+\newcommand{\bestTBThreeDMax}{22.5}
+\newcommand{\bestLowThreeDVariant}{triton/zmarch-fp16}
+\newcommand{\bestLowThreeDGLUPS}{36.9}
+\newcommand{\bestLowThreeDBW}{148}
+\newcommand{\bestLowThreeDPctCopy}{41}
+\newcommand{\bestLowThreeDPctSpec}{33}
+\newcommand{\bestLowThreeDMin}{35.1}
+\newcommand{\bestLowThreeDMax}{40.7}
+\newcommand{\bestTBThreeDK}{3}
+\newcommand{\bestTBThreeDEquiv}{180}
+\newcommand{\bestTBThreeDOverRoof}{0.50}
+\newcommand{\bestTBThreeDHaloBW}{80}
+\newcommand{\bestTBThreeDHaloBytes}{3.54}
+\newcommand{\numpyThreeDGLUPS}{0.438}
 \newcommand{\numpyThreeDSize}{64^3}
-\newcommand{\speedupNumpyThreeD}{50}
-\newcommand{\perfTableRows}{2D & \texttt{triton} & \texttt{tile} & fp32 & 1 & 16.21 & 8 & 130 & 36 & 29 & -- \\
-2D & \texttt{triton} & \texttt{tile-bf16} & bfp16 & 1 & 26.98 & 4 & 108 & 30 & 24 & -- \\
-2D & \texttt{triton} & \texttt{tile-fp16} & fp16 & 1 & 26.24 & 4 & 105 & 29 & 23 & -- \\
-2D & \texttt{warp} & \texttt{naive} & fp32 & 1 & 14.63 & 8 & 117 & 32 & 26 & -- \\
-2D & \texttt{numba} & \texttt{naive} & fp32 & 1 & 15.03 & 8 & 120 & 33 & 27 & -- \\
-2D & \texttt{cupy-cuda-c} & \texttt{naive} & fp32 & 1 & 16.00 & 8 & 128 & 35 & 29 & -- \\
-2D & \texttt{cupy-cuda-c} & \texttt{naive-bf16} & bfp16 & 1 & 28.98 & 4 & 116 & 32 & 26 & -- \\
-2D & \texttt{cupy-cuda-c} & \texttt{naive-fp16} & fp16 & 1 & 30.22 & 4 & 121 & 33 & 27 & -- \\
-2D & \texttt{cupy-cuda-c} & \texttt{ymarch} & fp32 & 1 & 15.20 & 8 & 122 & 34 & 27 & -- \\
-2D & \texttt{cupy-cuda-c} & \texttt{tb2} & fp32 & 2 & 30.59 & 4 & 122 & 34 & 27 & 245 \\
-2D & \texttt{cupy-cuda-c} & \texttt{tb3} & fp32 & 3 & 45.06 & 2.7 & 120 & 33 & 27 & 360 \\
-2D & \texttt{cupy-cuda-c} & \texttt{tb4} & fp32 & 4 & 59.98 & 2 & 120 & 33 & 27 & 480 \\
-2D & \texttt{cupy-cuda-c} & \texttt{tb8} & fp32 & 8 & 76.66 & 1 & 77 & 21 & 17 & 613 \\
-2D & \texttt{cupy-cuda-c} & \texttt{tb4-fp16} & fp16 & 4 & 77.25 & 1 & 77 & 21 & 17 & 309 \\
+\newcommand{\speedupNumpyThreeD}{71}
+\newcommand{\perfTableRows}{2D & \texttt{triton} & \texttt{tile} & fp32 & 1 & 19.69 & 8 & 158 & 44 & 35 & -- \\
+2D & \texttt{triton} & \texttt{tile-bf16} & bfp16 & 1 & 27.50 & 4 & 110 & 30 & 25 & -- \\
+2D & \texttt{triton} & \texttt{tile-fp16} & fp16 & 1 & 50.74 & 4 & 203 & 56 & 45 & -- \\
+2D & \texttt{warp} & \texttt{naive} & fp32 & 1 & 15.36 & 8 & 123 & 34 & 27 & -- \\
+2D & \texttt{numba} & \texttt{naive} & fp32 & 1 & 13.14 & 8 & 105 & 29 & 23 & -- \\
+2D & \texttt{cupy-cuda-c} & \texttt{naive} & fp32 & 1 & 19.10 & 8 & 153 & 42 & 34 & -- \\
+2D & \texttt{cupy-cuda-c} & \texttt{naive-bf16} & bfp16 & 1 & 53.52 & 4 & 214 & 59 & 48 & -- \\
+2D & \texttt{cupy-cuda-c} & \texttt{naive-fp16} & fp16 & 1 & 50.43 & 4 & 202 & 56 & 45 & -- \\
+2D & \texttt{cupy-cuda-c} & \texttt{ymarch} & fp32 & 1 & 32.72 & 8 & 262 & 72 & 58 & -- \\
+2D & \texttt{cupy-cuda-c} & \texttt{tb2} & fp32 & 2 & 74.60 & 4 & 298 & 83 & 67 & 597 \\
+2D & \texttt{cupy-cuda-c} & \texttt{tb3} & fp32 & 3 & 89.94 & 2.7 & 240 & 66 & 54 & 720 \\
+2D & \texttt{cupy-cuda-c} & \texttt{tb4} & fp32 & 4 & 115.42 & 2 & 231 & 64 & 52 & 923 \\
+2D & \texttt{cupy-cuda-c} & \texttt{tb8} & fp32 & 8 & 120.13 & 1 & 120 & 33 & 27 & 961 \\
+2D & \texttt{cupy-cuda-c} & \texttt{tb4-fp16} & fp16 & 4 & 146.16 & 1 & 146 & 40 & 33 & 585 \\
 \midrule
-3D & \texttt{torch-eager} & \texttt{slicing} & fp32 & 1 & 3.62 & 8 & 29 & 8 & 6 & -- \\
-3D & \texttt{torch-compile} & \texttt{inductor} & fp32 & 1 & 28.71 & 8 & 230 & 64 & 51 & -- \\
-3D & \texttt{triton} & \texttt{tile} & fp32 & 1 & 32.27 & 8 & 258 & 72 & 58 & -- \\
-3D & \texttt{triton} & \texttt{tile-bf16} & bfp16 & 1 & 43.16 & 4 & 173 & 48 & 39 & -- \\
-3D & \texttt{triton} & \texttt{tile-fp16} & fp16 & 1 & 42.19 & 4 & 169 & 47 & 38 & -- \\
-3D & \texttt{triton} & \texttt{zmarch} & fp32 & 1 & 17.62 & 8 & 141 & 39 & 31 & -- \\
-3D & \texttt{triton} & \texttt{zmarch-bf16} & bfp16 & 1 & 51.41 & 4 & 206 & 57 & 46 & -- \\
-3D & \texttt{triton} & \texttt{zmarch-fp16} & fp16 & 1 & 36.17 & 4 & 145 & 40 & 32 & -- \\
-3D & \texttt{warp} & \texttt{naive} & fp32 & 1 & 15.33 & 8 & 123 & 34 & 27 & -- \\
-3D & \texttt{warp} & \texttt{zmarch} & fp32 & 1 & 29.87 & 8 & 239 & 66 & 53 & -- \\
-3D & \texttt{numba} & \texttt{naive} & fp32 & 1 & 17.78 & 8 & 142 & 39 & 32 & -- \\
-3D & \texttt{numba} & \texttt{zmarch} & fp32 & 1 & 29.68 & 8 & 237 & 66 & 53 & -- \\
-3D & \texttt{cupy-cuda-c} & \texttt{naive} & fp32 & 1 & 28.77 & 8 & 230 & 64 & 51 & -- \\
-3D & \texttt{cupy-cuda-c} & \texttt{naive-bf16} & bfp16 & 1 & 37.33 & 4 & 149 & 41 & 33 & -- \\
-3D & \texttt{cupy-cuda-c} & \texttt{naive-fp16} & fp16 & 1 & 37.19 & 4 & 149 & 41 & 33 & -- \\
-3D & \texttt{cupy-cuda-c} & \texttt{zmarch} & fp32 & 1 & 29.66 & 8 & 237 & 66 & 53 & -- \\
-3D & \texttt{cupy-cuda-c} & \texttt{tb2} & fp32 & 2 & 54.61 & 4 & 218 & 61 & 49 & 437 \\
-3D & \texttt{cupy-cuda-c} & \texttt{tb3} & fp32 & 3 & 66.51 & 2.7 & 177 & 49 & 40 & 532 \\
-3D & \texttt{cupy-cuda-c} & \texttt{tb4} & fp32 & 4 & 73.95 & 2 & 148 & 41 & 33 & 592 \\
-3D & \texttt{cupy-cuda-c} & \texttt{tb4-fp16} & fp16 & 4 & 66.78 & 1 & 67 & 18 & 15 & 267 \\}
+3D & \texttt{torch-eager} & \texttt{slicing} & fp32 & 1 & 1.72 & 8 & 14 & 4 & 3 & -- \\
+3D & \texttt{torch-compile} & \texttt{inductor} & fp32 & 1 & 15.60 & 8 & 125 & 35 & 28 & -- \\
+3D & \texttt{triton} & \texttt{tile} & fp32 & 1 & 16.63 & 8 & 133 & 37 & 30 & -- \\
+3D & \texttt{triton} & \texttt{tile-bf16} & bfp16 & 1 & 25.97 & 4 & 104 & 29 & 23 & -- \\
+3D & \texttt{triton} & \texttt{tile-fp16} & fp16 & 1 & 27.83 & 4 & 111 & 31 & 25 & -- \\
+3D & \texttt{triton} & \texttt{zmarch} & fp32 & 1 & 18.48 & 8 & 148 & 41 & 33 & -- \\
+3D & \texttt{triton} & \texttt{zmarch-bf16} & bfp16 & 1 & 19.76 & 4 & 79 & 22 & 18 & -- \\
+3D & \texttt{triton} & \texttt{zmarch-fp16} & fp16 & 1 & 36.95 & 4 & 148 & 41 & 33 & -- \\
+3D & \texttt{warp} & \texttt{naive} & fp32 & 1 & 5.36 & 8 & 43 & 12 & 10 & -- \\
+3D & \texttt{warp} & \texttt{zmarch} & fp32 & 1 & 9.39 & 8 & 75 & 21 & 17 & -- \\
+3D & \texttt{numba} & \texttt{naive} & fp32 & 1 & 6.23 & 8 & 50 & 14 & 11 & -- \\
+3D & \texttt{numba} & \texttt{zmarch} & fp32 & 1 & 9.50 & 8 & 76 & 21 & 17 & -- \\
+3D & \texttt{cupy-cuda-c} & \texttt{naive} & fp32 & 1 & 10.12 & 8 & 81 & 22 & 18 & -- \\
+3D & \texttt{cupy-cuda-c} & \texttt{naive-bf16} & bfp16 & 1 & 13.14 & 4 & 53 & 15 & 12 & -- \\
+3D & \texttt{cupy-cuda-c} & \texttt{naive-fp16} & fp16 & 1 & 13.94 & 4 & 56 & 15 & 12 & -- \\
+3D & \texttt{cupy-cuda-c} & \texttt{zmarch} & fp32 & 1 & 9.43 & 8 & 75 & 21 & 17 & -- \\
+3D & \texttt{cupy-cuda-c} & \texttt{tb2} & fp32 & 2 & 17.72 & 4 & 71 & 20 & 16 & 142 \\
+3D & \texttt{cupy-cuda-c} & \texttt{tb3} & fp32 & 3 & 22.48 & 2.7 & 60 & 17 & 13 & 180 \\
+3D & \texttt{cupy-cuda-c} & \texttt{tb4} & fp32 & 4 & 21.24 & 2 & 42 & 12 & 9 & 170 \\
+3D & \texttt{cupy-cuda-c} & \texttt{tb4-fp16} & fp16 & 4 & 18.26 & 1 & 18 & 5 & 4 & 73 \\}
 \newcommand{\spatialOrderTwoD}{1.97}
 \newcommand{\spatialErrFinestTwoD}{9.9\times10^{-7}}
 \newcommand{\spatialNFinestTwoD}{257}
