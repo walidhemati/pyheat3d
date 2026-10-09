@@ -49,6 +49,8 @@ _STORAGE_CODE = {"float32": 0, "float16": 1, "bfloat16": 2}
 #: default launch / tiling parameters (chosen by a small sweep, see bench/tune.py)
 NAIVE2D_BLOCK = (32, 8, 1)
 NAIVE3D_BLOCK = (32, 4, 2)
+#: sites per thread in the naive kernels, per storage type
+NAIVE_VEC = {"float32": 1, "float16": 2, "bfloat16": 2}
 ZMARCH = {"BX": 64, "BY": 4, "ZCH": 16}
 # temporal blocking 3D, per K: block 32 x TYT threads, R rows per thread (tile 32 x TYT*R)
 TB3D = {
@@ -127,15 +129,16 @@ class CupyStepper(Stepper):
         st, p = self.storage, self.periodic
         sh = self.shape
         nx, ny = sh[-1], sh[-2]
+        vec = NAIVE_VEC[st]
         if self.dims == 2:
             bx, by, _ = NAIVE2D_BLOCK
-            self.naive = (kernel("naive2d", st, p), ((nx + bx - 1) // bx, (ny + by - 1) // by),
-                          (bx, by))
+            self.naive = (kernel("naive2d", st, p, VEC=vec),
+                          ((nx + bx * vec - 1) // (bx * vec), (ny + by - 1) // by), (bx, by))
         else:
             bx, by, bz = NAIVE3D_BLOCK
-            self.naive = (kernel("naive3d", st, p),
-                          ((nx + bx - 1) // bx, (ny + by - 1) // by, (sh[0] + bz - 1) // bz),
-                          (bx, by, bz))
+            self.naive = (kernel("naive3d", st, p, VEC=vec),
+                          ((nx + bx * vec - 1) // (bx * vec), (ny + by - 1) // by,
+                           (sh[0] + bz - 1) // bz), (bx, by, bz))
         self.main = self.naive
         if self.kind == "zmarch":
             if self.dims != 3:

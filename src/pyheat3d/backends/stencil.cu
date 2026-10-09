@@ -7,7 +7,8 @@
 // Compile-time macros (set by the Python side):
 //   STORAGE   0 = fp32, 1 = fp16, 2 = bf16 storage (arithmetic is always fp32)
 //   PERIODIC  0 = Dirichlet (boundary layer fixed, never written), 1 = periodic
-//   BX, BY    thread-block shape of the naive / z-marching kernels
+//   BX, BY    thread-block shape of the z-marching kernel
+//   VEC       sites per thread in the naive kernels (x direction, strided by blockDim.x)
 //   ZCH       z-planes (y-rows in 2D) marched per block
 //   K         time steps fused per sweep in the temporal-blocking kernels
 //   TX, TY    extended tile (including the K-deep halo) of the temporal-blocking kernels
@@ -34,45 +35,61 @@ __device__ __forceinline__ int clampi(int i, int lo, int hi) { return i < lo ? l
 // ---------------------------------------------------------------------------------------------
 // Rung "naive": one thread per lattice site, every operand loaded through L1/L2.
 // ---------------------------------------------------------------------------------------------
+#ifndef VEC
+#define VEC 1
+#endif
+// VEC consecutive-in-blockDim.x sites per thread (coalesced per instruction): more bytes in
+// flight per thread, which the 2-byte storage variants need to saturate DRAM.
 extern "C" __global__ void naive2d(const T* __restrict__ u, T* __restrict__ o,
                                    int ny, int nx, float c0, float c1)
 {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
     const int j = blockIdx.y * blockDim.y + threadIdx.y;
-    if (i >= nx || j >= ny) return;
+    if (j >= ny) return;
+#pragma unroll
+    for (int v = 0; v < VEC; ++v) {
+        const int i = (blockIdx.x * VEC + v) * blockDim.x + threadIdx.x;
+        if (i >= nx) continue;
 #if PERIODIC
-    const int im = i == 0 ? nx - 1 : i - 1, ip = i == nx - 1 ? 0 : i + 1;
-    const int jm = j == 0 ? ny - 1 : j - 1, jp = j == ny - 1 ? 0 : j + 1;
+        const int im = i == 0 ? nx - 1 : i - 1, ip = i == nx - 1 ? 0 : i + 1;
+        const int jm = j == 0 ? ny - 1 : j - 1, jp = j == ny - 1 ? 0 : j + 1;
 #else
-    if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1) return;
-    const int im = i - 1, ip = i + 1, jm = j - 1, jp = j + 1;
+        if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1) continue;
+        const int im = i - 1, ip = i + 1, jm = j - 1, jp = j + 1;
 #endif
-    const size_t r = (size_t)j * nx;
-    const float s = (ld(u, r + im) + ld(u, r + ip)) + (ld(u, (size_t)jm * nx + i) + ld(u, (size_t)jp * nx + i));
-    st(o, r + i, c0 * ld(u, r + i) + c1 * s);
+        const size_t r = (size_t)j * nx;
+        const float s = (ld(u, r + im) + ld(u, r + ip)) +
+                        (ld(u, (size_t)jm * nx + i) + ld(u, (size_t)jp * nx + i));
+        st(o, r + i, c0 * ld(u, r + i) + c1 * s);
+    }
 }
 
 extern "C" __global__ void naive3d(const T* __restrict__ u, T* __restrict__ o,
                                    int nz, int ny, int nx, float c0, float c1)
 {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
     const int j = blockIdx.y * blockDim.y + threadIdx.y;
     const int k = blockIdx.z * blockDim.z + threadIdx.z;
-    if (i >= nx || j >= ny || k >= nz) return;
-#if PERIODIC
-    const int im = i == 0 ? nx - 1 : i - 1, ip = i == nx - 1 ? 0 : i + 1;
-    const int jm = j == 0 ? ny - 1 : j - 1, jp = j == ny - 1 ? 0 : j + 1;
-    const int km = k == 0 ? nz - 1 : k - 1, kp = k == nz - 1 ? 0 : k + 1;
-#else
-    if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1 || k == 0 || k == nz - 1) return;
-    const int im = i - 1, ip = i + 1, jm = j - 1, jp = j + 1, km = k - 1, kp = k + 1;
-#endif
+    if (j >= ny || k >= nz) return;
     const size_t P = (size_t)nx * ny;
-    const size_t b = (size_t)k * P + (size_t)j * nx;
-    const float sx = ld(u, b + im) + ld(u, b + ip);
-    const float sy = ld(u, (size_t)k * P + (size_t)jm * nx + i) + ld(u, (size_t)k * P + (size_t)jp * nx + i);
-    const float sz = ld(u, (size_t)km * P + (size_t)j * nx + i) + ld(u, (size_t)kp * P + (size_t)j * nx + i);
-    st(o, b + i, c0 * ld(u, b + i) + c1 * ((sx + sy) + sz));
+#pragma unroll
+    for (int v = 0; v < VEC; ++v) {
+        const int i = (blockIdx.x * VEC + v) * blockDim.x + threadIdx.x;
+        if (i >= nx) continue;
+#if PERIODIC
+        const int im = i == 0 ? nx - 1 : i - 1, ip = i == nx - 1 ? 0 : i + 1;
+        const int jm = j == 0 ? ny - 1 : j - 1, jp = j == ny - 1 ? 0 : j + 1;
+        const int km = k == 0 ? nz - 1 : k - 1, kp = k == nz - 1 ? 0 : k + 1;
+#else
+        if (i == 0 || i == nx - 1 || j == 0 || j == ny - 1 || k == 0 || k == nz - 1) continue;
+        const int im = i - 1, ip = i + 1, jm = j - 1, jp = j + 1, km = k - 1, kp = k + 1;
+#endif
+        const size_t b = (size_t)k * P + (size_t)j * nx;
+        const float sx = ld(u, b + im) + ld(u, b + ip);
+        const float sy = ld(u, (size_t)k * P + (size_t)jm * nx + i) +
+                         ld(u, (size_t)k * P + (size_t)jp * nx + i);
+        const float sz = ld(u, (size_t)km * P + (size_t)j * nx + i) +
+                         ld(u, (size_t)kp * P + (size_t)j * nx + i);
+        st(o, b + i, c0 * ld(u, b + i) + c1 * ((sx + sy) + sz));
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
