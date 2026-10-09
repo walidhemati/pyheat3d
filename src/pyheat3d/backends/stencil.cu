@@ -146,72 +146,107 @@ zmarch3d(const T* __restrict__ u, T* __restrict__ o, int nz, int ny, int nx, flo
 // ---------------------------------------------------------------------------------------------
 // Rung "tb" (temporal blocking): K time steps per DRAM pass.
 //
-// A block of TX*TY threads covers an extended xy tile; thread (tx, ty) owns one column. The
-// block marches along z through planes z0-K .. z1+K-1. Stage s (1..K) computes time level
-// t+s of plane (iz - s) from the level-(t+s-1) register queue q[s-1] (z neighbours) and the
-// shared-memory copy of that queue's center plane (x/y neighbours). This is a wavefront in
-// (z, t): level t is read from DRAM once and level t+K written once per sweep. Halo columns
-// are recomputed redundantly (overlapped tiling), the valid region shrinks by one column per
-// stage, and only the central (TX-2K) x (TY-2K) columns are stored.
-// Per sweep and output site the DRAM traffic is ~ (TX*TY)/((TX-2K)(TY-2K)) * (ZCH+2K)/ZCH
-// reads plus one write, i.e. about 1/K of the single-step traffic (see traffic.py).
+// A block of 32 x TYT threads covers an extended xy tile of 32 x (TYT*R) columns: lane tx owns
+// column x, and thread (tx, ty) owns R consecutive y rows (register blocking in y). The block
+// marches along z through planes z0-K .. z1+K-1. Stage s (1..K) computes time level t+s of
+// plane (iz - s) from the level-(t+s-1) register queue q[s-1] (z neighbours). x neighbours
+// come from warp shuffles, y neighbours from the thread's own registers, and only the first and
+// last row of each thread go through shared memory. This is a wavefront in (z, t): level t is
+// read from DRAM once and level t+K written once per sweep. Halo columns are recomputed
+// redundantly (overlapped tiling): the valid region shrinks by one column per stage and only
+// the central (32-2K) x (TYT*R-2K) columns are stored.
+// Per output site and sweep the DRAM traffic is ~ (32*TY)/((32-2K)(TY-2K)) * (ZCH+2K)/ZCH
+// reads plus one write, i.e. roughly 1/K of the single-step traffic (see traffic.py).
 // ---------------------------------------------------------------------------------------------
-#if defined(K) && defined(TX) && defined(TY) && defined(ZCH)
-extern "C" __global__ void __launch_bounds__(TX * TY)
+#if defined(K) && defined(TYT) && defined(R) && defined(ZCH)
+#define TYR (TYT * R)
+extern "C" __global__ void __launch_bounds__(32 * TYT)
 tb3d(const T* __restrict__ u, T* __restrict__ o, int nz, int ny, int nx, float c0, float c1)
 {
-    __shared__ float sm[2][K][TY][TX];
+    __shared__ float edge[2][K][2][TYT][32];  // [parity][stage][first/last row][ty][tx]
+    const unsigned FULL = 0xffffffffu;
     const int tx = threadIdx.x, ty = threadIdx.y;
-    const int gx = blockIdx.x * (TX - 2 * K) - K + tx;
-    const int gy = blockIdx.y * (TY - 2 * K) - K + ty;
+    const int gx = blockIdx.x * (32 - 2 * K) - K + tx;
+    const int gy0 = blockIdx.y * (TYR - 2 * K) - K + ty * R;
     const int z0 = blockIdx.z * ZCH;
     const int z1 = min(z0 + ZCH, nz);
 #if PERIODIC
-    const int lx = wrapi(gx, nx), ly = wrapi(gy, ny);
-    const bool fixed_xy = false;
+    const int lx = wrapi(gx, nx);
 #else
-    const int lx = clampi(gx, 0, nx - 1), ly = clampi(gy, 0, ny - 1);
-    const bool fixed_xy = gx <= 0 || gx >= nx - 1 || gy <= 0 || gy >= ny - 1;
+    const int lx = clampi(gx, 0, nx - 1);
 #endif
     const size_t P = (size_t)nx * ny;
-    const size_t col = (size_t)ly * nx + lx;
-    const int txm = max(tx - 1, 0), txp = min(tx + 1, TX - 1);
-    const int tym = max(ty - 1, 0), typ = min(ty + 1, TY - 1);
-    const bool writer = tx >= K && tx < TX - K && ty >= K && ty < TY - K && gx < nx && gy < ny
-                        && !fixed_xy;
-    float q[K][3];
+    size_t col[R];
+    bool fixed[R], writer[R];
 #pragma unroll
-    for (int s = 0; s < K; ++s) { q[s][0] = 0.f; q[s][1] = 0.f; q[s][2] = 0.f; }
-
+    for (int r = 0; r < R; ++r) {
+        const int gy = gy0 + r;
 #if PERIODIC
-    float pref = ld(u, (size_t)wrapi(z0 - K, nz) * P + col);
+        col[r] = (size_t)wrapi(gy, ny) * nx + lx;
+        fixed[r] = false;
 #else
-    float pref = ld(u, (size_t)clampi(z0 - K, 0, nz - 1) * P + col);
+        col[r] = (size_t)clampi(gy, 0, ny - 1) * nx + lx;
+        fixed[r] = gx <= 0 || gx >= nx - 1 || gy <= 0 || gy >= ny - 1;
 #endif
+        const int row = ty * R + r;
+        writer[r] = tx >= K && tx < 32 - K && row >= K && row < TYR - K && gx < nx && gy < ny
+                    && !fixed[r];
+    }
+    float q[K][3][R];
+#pragma unroll
+    for (int s = 0; s < K; ++s)
+#pragma unroll
+        for (int r = 0; r < R; ++r) { q[s][0][r] = 0.f; q[s][1][r] = 0.f; q[s][2][r] = 0.f; }
+
+    float pref[R];
+    {
+#if PERIODIC
+        const size_t zoff = (size_t)wrapi(z0 - K, nz) * P;
+#else
+        const size_t zoff = (size_t)clampi(z0 - K, 0, nz - 1) * P;
+#endif
+#pragma unroll
+        for (int r = 0; r < R; ++r) pref[r] = ld(u, zoff + col[r]);
+    }
     for (int iz = z0 - K; iz < z1 + K; ++iz) {
         const int par = iz & 1;
-        q[0][0] = q[0][1]; q[0][1] = q[0][2]; q[0][2] = pref;
+#pragma unroll
+        for (int r = 0; r < R; ++r) { q[0][0][r] = q[0][1][r]; q[0][1][r] = q[0][2][r]; q[0][2][r] = pref[r]; }
         if (iz + 1 < z1 + K) {
 #if PERIODIC
-            pref = ld(u, (size_t)wrapi(iz + 1, nz) * P + col);
+            const size_t zoff = (size_t)wrapi(iz + 1, nz) * P;
 #else
-            pref = ld(u, (size_t)clampi(iz + 1, 0, nz - 1) * P + col);
+            const size_t zoff = (size_t)clampi(iz + 1, 0, nz - 1) * P;
 #endif
+#pragma unroll
+            for (int r = 0; r < R; ++r) pref[r] = ld(u, zoff + col[r]);
         }
-        float r = 0.f;
+        float res[R];
 #pragma unroll
         for (int s = 1; s <= K; ++s) {
             const int c = iz - s;
-            const float ctr = q[s - 1][1];
-            sm[par][s - 1][ty][tx] = ctr;
+            edge[par][s - 1][0][ty][tx] = q[s - 1][1][0];
+            edge[par][s - 1][1][ty][tx] = q[s - 1][1][R - 1];
             __syncthreads();
-            const float sxy = (sm[par][s - 1][ty][txm] + sm[par][s - 1][ty][txp]) +
-                              (sm[par][s - 1][tym][tx] + sm[par][s - 1][typ][tx]);
-            r = c0 * ctr + c1 * (sxy + (q[s - 1][0] + q[s - 1][2]));
+            const float up = ty > 0 ? edge[par][s - 1][1][ty - 1][tx] : q[s - 1][1][0];
+            const float dn = ty < TYT - 1 ? edge[par][s - 1][0][ty + 1][tx] : q[s - 1][1][R - 1];
+#pragma unroll
+            for (int r = 0; r < R; ++r) {
+                const float ctr = q[s - 1][1][r];
+                const float xm = __shfl_up_sync(FULL, ctr, 1);
+                const float xp = __shfl_down_sync(FULL, ctr, 1);
+                const float ym = r == 0 ? up : q[s - 1][1][r - 1];
+                const float yp = r == R - 1 ? dn : q[s - 1][1][r + 1];
+                float v = c0 * ctr + c1 * (((xm + xp) + (ym + yp)) + (q[s - 1][0][r] + q[s - 1][2][r]));
 #if !PERIODIC
-            if (fixed_xy || c <= 0 || c >= nz - 1) r = ctr;
+                if (fixed[r] || c <= 0 || c >= nz - 1) v = ctr;
 #endif
-            if (s < K) { q[s][0] = q[s][1]; q[s][1] = q[s][2]; q[s][2] = r; }
+                res[r] = v;
+            }
+            if (s < K) {
+#pragma unroll
+                for (int r = 0; r < R; ++r) { q[s][0][r] = q[s][1][r]; q[s][1][r] = q[s][2][r]; q[s][2][r] = res[r]; }
+            }
         }
         const int c = iz - K;
 #if PERIODIC
@@ -219,63 +254,103 @@ tb3d(const T* __restrict__ u, T* __restrict__ o, int nz, int ny, int nx, float c
 #else
         const bool zok = c >= z0 && c < z1 && c > 0 && c < nz - 1;
 #endif
-        if (writer && zok) st(o, (size_t)c * P + (size_t)gy * nx + gx, r);
+        if (zok) {
+#pragma unroll
+            for (int r = 0; r < R; ++r)
+                if (writer[r]) st(o, (size_t)c * P + (size_t)(gy0 + r) * nx + gx, res[r]);
+        }
     }
 }
 #endif
 
-// 2D analogue: a 1D block of TX threads covers an x-strip (with K-deep halo) and marches ZCH
-// rows along y. With K = 1 this is the 2D "y-marching" (register-queue) kernel.
-#if defined(K) && defined(TX) && defined(ZCH)
-extern "C" __global__ void __launch_bounds__(TX)
+// 2D temporal blocking, warp-synchronous: every warp owns an x-strip of 32*R columns (lane l
+// holds columns l, l+32, ..., l+32(R-1), so every load is coalesced) including a K-deep halo on
+// both sides, and marches ZCH rows along y with a K-stage register queue. x neighbours come
+// from warp shuffles, y neighbours from the queue: no shared memory and no __syncthreads.
+// Strips overlap by 2K columns (redundant halo work 32R/(32R-2K)). With K = 1 this is the 2D
+// "y-marching" register-queue kernel.
+#if defined(K) && defined(R) && defined(WARPS) && defined(ZCH)
+#define SW (32 * R)
+extern "C" __global__ void __launch_bounds__(32 * WARPS)
 tb2d(const T* __restrict__ u, T* __restrict__ o, int ny, int nx, float c0, float c1)
 {
-    __shared__ float sm[2][K][TX];
-    const int tx = threadIdx.x;
-    const int gx = blockIdx.x * (TX - 2 * K) - K + tx;
+    const unsigned FULL = 0xffffffffu;
+    const int lane = threadIdx.x;
+    const int strip = blockIdx.x * WARPS + threadIdx.y;
+    const int xs = strip * (SW - 2 * K) - K;  // first (halo) column of the strip
     const int y0 = blockIdx.y * ZCH;
     const int y1 = min(y0 + ZCH, ny);
-#if PERIODIC
-    const int lx = wrapi(gx, nx);
-    const bool fixed_x = false;
-#else
-    const int lx = clampi(gx, 0, nx - 1);
-    const bool fixed_x = gx <= 0 || gx >= nx - 1;
-#endif
-    const int txm = max(tx - 1, 0), txp = min(tx + 1, TX - 1);
-    const bool writer = tx >= K && tx < TX - K && gx < nx && !fixed_x;
-    float q[K][3];
+    int lx[R];
+    bool fixed[R], writer[R];
 #pragma unroll
-    for (int s = 0; s < K; ++s) { q[s][0] = 0.f; q[s][1] = 0.f; q[s][2] = 0.f; }
-
+    for (int r = 0; r < R; ++r) {
+        const int cl = lane + 32 * r;
+        const int gx = xs + cl;
 #if PERIODIC
-    float pref = ld(u, (size_t)wrapi(y0 - K, ny) * nx + lx);
+        lx[r] = wrapi(gx, nx);
+        fixed[r] = false;
 #else
-    float pref = ld(u, (size_t)clampi(y0 - K, 0, ny - 1) * nx + lx);
+        lx[r] = clampi(gx, 0, nx - 1);
+        fixed[r] = gx <= 0 || gx >= nx - 1;
 #endif
+        writer[r] = cl >= K && cl < SW - K && gx < nx && !fixed[r];
+    }
+    float q[K][3][R];
+#pragma unroll
+    for (int s = 0; s < K; ++s)
+#pragma unroll
+        for (int r = 0; r < R; ++r) { q[s][0][r] = 0.f; q[s][1][r] = 0.f; q[s][2][r] = 0.f; }
+
+    float pref[R];
+    {
+#if PERIODIC
+        const size_t yoff = (size_t)wrapi(y0 - K, ny) * nx;
+#else
+        const size_t yoff = (size_t)clampi(y0 - K, 0, ny - 1) * nx;
+#endif
+#pragma unroll
+        for (int r = 0; r < R; ++r) pref[r] = ld(u, yoff + lx[r]);
+    }
     for (int iy = y0 - K; iy < y1 + K; ++iy) {
-        const int par = iy & 1;
-        q[0][0] = q[0][1]; q[0][1] = q[0][2]; q[0][2] = pref;
+#pragma unroll
+        for (int r = 0; r < R; ++r) { q[0][0][r] = q[0][1][r]; q[0][1][r] = q[0][2][r]; q[0][2][r] = pref[r]; }
         if (iy + 1 < y1 + K) {
 #if PERIODIC
-            pref = ld(u, (size_t)wrapi(iy + 1, ny) * nx + lx);
+            const size_t yoff = (size_t)wrapi(iy + 1, ny) * nx;
 #else
-            pref = ld(u, (size_t)clampi(iy + 1, 0, ny - 1) * nx + lx);
+            const size_t yoff = (size_t)clampi(iy + 1, 0, ny - 1) * nx;
 #endif
+#pragma unroll
+            for (int r = 0; r < R; ++r) pref[r] = ld(u, yoff + lx[r]);
         }
-        float r = 0.f;
+        float res[R];
 #pragma unroll
         for (int s = 1; s <= K; ++s) {
             const int c = iy - s;
-            const float ctr = q[s - 1][1];
-            sm[par][s - 1][tx] = ctr;
-            __syncthreads();
-            const float sx = sm[par][s - 1][txm] + sm[par][s - 1][txp];
-            r = c0 * ctr + c1 * (sx + (q[s - 1][0] + q[s - 1][2]));
+            float up[R], dn[R], first[R], last[R];
+#pragma unroll
+            for (int r = 0; r < R; ++r) {
+                const float v = q[s - 1][1][r];
+                up[r] = __shfl_up_sync(FULL, v, 1);      // lane-1, same r
+                dn[r] = __shfl_down_sync(FULL, v, 1);    // lane+1, same r
+                last[r] = __shfl_sync(FULL, v, 31);      // lane 31 of r (left of lane 0, r+1)
+                first[r] = __shfl_sync(FULL, v, 0);      // lane 0 of r (right of lane 31, r-1)
+            }
+#pragma unroll
+            for (int r = 0; r < R; ++r) {
+                const float ctr = q[s - 1][1][r];
+                const float xm = (lane == 0 && r > 0) ? last[r > 0 ? r - 1 : 0] : up[r];
+                const float xp = (lane == 31 && r < R - 1) ? first[r < R - 1 ? r + 1 : 0] : dn[r];
+                float v = c0 * ctr + c1 * ((xm + xp) + (q[s - 1][0][r] + q[s - 1][2][r]));
 #if !PERIODIC
-            if (fixed_x || c <= 0 || c >= ny - 1) r = ctr;
+                if (fixed[r] || c <= 0 || c >= ny - 1) v = ctr;
 #endif
-            if (s < K) { q[s][0] = q[s][1]; q[s][1] = q[s][2]; q[s][2] = r; }
+                res[r] = v;
+            }
+            if (s < K) {
+#pragma unroll
+                for (int r = 0; r < R; ++r) { q[s][0][r] = q[s][1][r]; q[s][1][r] = q[s][2][r]; q[s][2][r] = res[r]; }
+            }
         }
         const int c = iy - K;
 #if PERIODIC
@@ -283,7 +358,11 @@ tb2d(const T* __restrict__ u, T* __restrict__ o, int ny, int nx, float c0, float
 #else
         const bool yok = c >= y0 && c < y1 && c > 0 && c < ny - 1;
 #endif
-        if (writer && yok) st(o, (size_t)c * nx + gx, r);
+        if (yok) {
+#pragma unroll
+            for (int r = 0; r < R; ++r)
+                if (writer[r]) st(o, (size_t)c * nx + xs + lane + 32 * r, res[r]);
+        }
     }
 }
 #endif

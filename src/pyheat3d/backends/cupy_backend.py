@@ -46,12 +46,26 @@ with warnings.catch_warnings():
 
 _STORAGE_CODE = {"float32": 0, "float16": 1, "bfloat16": 2}
 
-#: default launch / tiling parameters (chosen by a small sweep, see bench/tune_cuda.py)
+#: default launch / tiling parameters (chosen by a small sweep, see bench/tune.py)
 NAIVE2D_BLOCK = (32, 8, 1)
-NAIVE3D_BLOCK = (32, 8, 1)
-ZMARCH = {"BX": 32, "BY": 8, "ZCH": 64}
-TB3D = {"TX": 32, "TY": 16, "ZCH": 64}
-TB2D = {"TX": 256, "ZCH": 256}
+NAIVE3D_BLOCK = (32, 4, 2)
+ZMARCH = {"BX": 64, "BY": 4, "ZCH": 16}
+# temporal blocking 3D, per K: block 32 x TYT threads, R rows per thread (tile 32 x TYT*R)
+TB3D = {
+    2: {"TYT": 4, "R": 4, "ZCH": 64},
+    3: {"TYT": 8, "R": 4, "ZCH": 64},
+    4: {"TYT": 8, "R": 8, "ZCH": 128},
+}
+TB3D_DEFAULT = {"TYT": 8, "R": 8, "ZCH": 128}
+# temporal blocking 2D (warp-synchronous), per K: R columns per lane (strip 32*R), WARPS per block
+TB2D = {
+    1: {"R": 2, "WARPS": 2, "ZCH": 256},
+    2: {"R": 2, "WARPS": 2, "ZCH": 256},
+    3: {"R": 2, "WARPS": 2, "ZCH": 256},
+    4: {"R": 2, "WARPS": 2, "ZCH": 256},
+    8: {"R": 2, "WARPS": 2, "ZCH": 256},
+}
+TB2D_DEFAULT = {"R": 2, "WARPS": 2, "ZCH": 256}
 
 
 @lru_cache(maxsize=None)
@@ -118,9 +132,10 @@ class CupyStepper(Stepper):
             self.naive = (kernel("naive2d", st, p), ((nx + bx - 1) // bx, (ny + by - 1) // by),
                           (bx, by))
         else:
-            bx, by, _ = NAIVE3D_BLOCK
+            bx, by, bz = NAIVE3D_BLOCK
             self.naive = (kernel("naive3d", st, p),
-                          ((nx + bx - 1) // bx, (ny + by - 1) // by, sh[0]), (bx, by, 1))
+                          ((nx + bx - 1) // bx, (ny + by - 1) // by, (sh[0] + bz - 1) // bz),
+                          (bx, by, bz))
         self.main = self.naive
         if self.kind == "zmarch":
             if self.dims != 3:
@@ -132,16 +147,18 @@ class CupyStepper(Stepper):
         elif self.kind == "tb":
             K = self.K
             if self.dims == 3:
-                m = dict(TB3D, K=K)
-                ox, oy = m["TX"] - 2 * K, m["TY"] - 2 * K
+                m = dict(TB3D.get(K, TB3D_DEFAULT), K=K)
+                ox, oy = 32 - 2 * K, m["TYT"] * m["R"] - 2 * K
                 self.main = (kernel("tb3d", st, p, **m),
                              ((nx + ox - 1) // ox, (ny + oy - 1) // oy,
-                              (sh[0] + m["ZCH"] - 1) // m["ZCH"]), (m["TX"], m["TY"]))
+                              (sh[0] + m["ZCH"] - 1) // m["ZCH"]), (32, m["TYT"]))
             else:
-                m = dict(TB2D, K=K)
-                ox = m["TX"] - 2 * K
+                m = dict(TB2D.get(K, TB2D_DEFAULT), K=K)
+                ox = 32 * m["R"] - 2 * K
+                strips = (nx + ox - 1) // ox
                 self.main = (kernel("tb2d", st, p, **m),
-                             ((nx + ox - 1) // ox, (ny + m["ZCH"] - 1) // m["ZCH"]), (m["TX"],))
+                             ((strips + m["WARPS"] - 1) // m["WARPS"],
+                              (ny + m["ZCH"] - 1) // m["ZCH"]), (32, m["WARPS"]))
             self.tile = m
 
     def _launch(self, cfg) -> None:
