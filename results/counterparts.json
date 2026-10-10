@@ -60,9 +60,9 @@
   "pystencils": {
    "source": "https://i10git.cs.fau.de/pycodegen/pystencils",
    "version": "2.1",
-   "sdist": "/home/hemati/python-hpc/_ref/pystencils-2.1-sdist/pystencils-2.1.tar.gz",
+   "sdist": "~/python-hpc/_ref/pystencils-2.1-sdist/pystencils-2.1.tar.gz",
    "sdist_sha256": "d6dd4c1a640435dc27712f7f8db488a25cf644908b321d17161d044161e2b831",
-   "python": "/home/hemati/.venvs/cp-pystencils/bin/python"
+   "python": "~/.venvs/cp-pystencils/bin/python"
   }
  },
  "gpu_state_start": {
