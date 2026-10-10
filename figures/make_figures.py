@@ -328,6 +328,13 @@ def bench_macros(bench: dict, src: str) -> dict[str, str]:
             if "halo_model_GBs" in bt:
                 m[f"bestTB{D}HaloBW"] = _fmt(bt["halo_model_GBs"], 0)
                 m[f"bestTB{D}HaloBytes"] = _fmt(bt["halo_model_bytes_per_unit"], 2)
+        # best fp32 single-step variant of each GPU backend at the largest size (% of copy)
+        for backend, tag in (("torch-compile", "Compile"), ("triton", "Triton"),
+                             ("warp", "Warp"), ("numba", "Numba"), ("cupy-cuda-c", "Cuda")):
+            rb = best(top, lambda r, b=backend: r["backend"] == b and not is_tb(r)
+                      and not is_low(r))
+            if rb is not None:
+                m[f"pct{tag}{D}"] = _fmt(rb["pct_copy_bw"], 0)
         npy = best([r for r in bench["runs"] if r["dims"] == dims and r["backend"] == "numpy"])
         if npy is not None:
             m[f"numpy{D}GLUPS"] = _fmt(npy["median"] / 1e3, 3)

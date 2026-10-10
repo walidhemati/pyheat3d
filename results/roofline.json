@@ -11,18 +11,18 @@
   "cupy": "13.5.1",
   "numba": "0.68.0",
   "numba_cuda": "0.30.4",
-  "date": "2026-10-09T22:42:46+02:00"
+  "date": "2026-10-10T04:33:19+02:00"
  },
- "provisional": true,
- "copy_bytes": 134217728,
- "measured_copy_bandwidth_GBs": 163.15677990347444,
+ "provisional": false,
+ "copy_bytes": 1073741824,
+ "measured_copy_bandwidth_GBs": 360.781727403002,
  "reference_copy_bandwidth_GBs": 361.0,
  "spec_bandwidth_GBs": 448.0,
- "fp32_fma_tflops": 7.158431292136209,
+ "fp32_fma_tflops": 16.178607107420813,
  "gpu_state": {
-  "sm_clock_MHz": 1425,
+  "sm_clock_MHz": 1740,
   "mem_clock_MHz": 6001,
-  "temp_C": 66,
-  "power_W": 93.4
+  "temp_C": 44,
+  "power_W": 60.4
  }
 }

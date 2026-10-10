@@ -14,13 +14,11 @@ solutions.**
 ## Headline result
 
 <!-- headline:start -->
-> **Provisional numbers** (`results/dev-provisional.json`, measured on a shared GPU during development; the final numbers come from `bench/run.py --full` on an idle GPU).
->
-> **3D 320^3, single step:** `triton/zmarch` **18.5 GLUPS** = 148 GB/s = **41% of the 361 GB/s copy bandwidth** (33% of the 448 GB/s spec).<br>
-> **3D temporal blocking (k=3):** `cupy-cuda-c/tb3` **22.5 GLUPS**, 0.50x the single-step roofline of 45.1 GLUPS while moving an estimated 60 GB/s (minimal model) to 80 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
-> **2D 8192^2, single step:** `cupy-cuda-c/ymarch` **32.7 GLUPS** = 262 GB/s = **72% of the 361 GB/s copy bandwidth** (58% of the 448 GB/s spec).<br>
-> **2D temporal blocking (k=8):** `cupy-cuda-c/tb8` **120.1 GLUPS**, 2.66x the single-step roofline of 45.1 GLUPS while moving an estimated 120 GB/s (minimal model) to 145 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
-> NVIDIA GeForce RTX 3070 Laptop GPU, 2026-10-09.
+> **3D 512^3, single step:** `numba/zmarch` **41.0 GLUPS** = 328 GB/s = **91% of the 361 GB/s copy bandwidth** (73% of the 448 GB/s spec).<br>
+> **3D temporal blocking (k=3):** `cupy-cuda-c/tb3` **94.1 GLUPS**, 2.09x the single-step roofline of 45.1 GLUPS while moving an estimated 251 GB/s (minimal model) to 333 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
+> **2D 16384^2, single step:** `torch-compile/inductor` **45.5 GLUPS** = 364 GB/s = **101% of the 361 GB/s copy bandwidth** (81% of the 448 GB/s spec).<br>
+> **2D temporal blocking (k=8):** `cupy-cuda-c/tb8` **157.8 GLUPS**, 3.50x the single-step roofline of 45.1 GLUPS while moving an estimated 158 GB/s (minimal model) to 191 GB/s (with halo over-fetch) of DRAM traffic. The roofline per step drops k-fold; the hardware is not beaten.<br>
+> NVIDIA GeForce RTX 3070 Laptop GPU, 2026-10-10.
 <!-- headline:end -->
 
 The stencil is the canonical memory-bound kernel: about 1 FLOP per byte of DRAM traffic.
@@ -90,42 +88,44 @@ k).
 <!-- perf-table:start -->
 | dims | variant | storage | k | GLUPS | B/update | GB/s | % copy | % spec |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| 3D 320^3 | `triton/zmarch-fp16` | float16 | 1 | 36.95 | 4 | 148 | 41 | 33 |
-| 3D 320^3 | `triton/tile-fp16` | float16 | 1 | 27.83 | 4 | 111 | 31 | 25 |
-| 3D 320^3 | `triton/tile-bf16` | bfloat16 | 1 | 25.97 | 4 | 104 | 29 | 23 |
-| 3D 320^3 | `cupy-cuda-c/tb3` | float32 | 3 | 22.48 | 2.7 | 60 | 17 | 13 |
-| 3D 320^3 | `cupy-cuda-c/tb4` | float32 | 4 | 21.24 | 2 | 42 | 12 | 9 |
-| 3D 320^3 | `triton/zmarch-bf16` | bfloat16 | 1 | 19.76 | 4 | 79 | 22 | 18 |
-| 3D 320^3 | `triton/zmarch` | float32 | 1 | 18.48 | 8 | 148 | 41 | 33 |
-| 3D 320^3 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 18.26 | 1 | 18 | 5 | 4 |
-| 3D 320^3 | `cupy-cuda-c/tb2` | float32 | 2 | 17.72 | 4 | 71 | 20 | 16 |
-| 3D 320^3 | `triton/tile` | float32 | 1 | 16.63 | 8 | 133 | 37 | 30 |
-| 3D 320^3 | `torch-compile/inductor` | float32 | 1 | 15.60 | 8 | 125 | 35 | 28 |
-| 3D 320^3 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 13.94 | 4 | 56 | 15 | 12 |
-| 3D 320^3 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 13.14 | 4 | 53 | 15 | 12 |
-| 3D 320^3 | `cupy-cuda-c/naive` | float32 | 1 | 10.12 | 8 | 81 | 22 | 18 |
-| 3D 320^3 | `numba/zmarch` | float32 | 1 | 9.50 | 8 | 76 | 21 | 17 |
-| 3D 320^3 | `cupy-cuda-c/zmarch` | float32 | 1 | 9.43 | 8 | 75 | 21 | 17 |
-| 3D 320^3 | `warp/zmarch` | float32 | 1 | 9.39 | 8 | 75 | 21 | 17 |
-| 3D 320^3 | `numba/naive` | float32 | 1 | 6.23 | 8 | 50 | 14 | 11 |
-| 3D 320^3 | `warp/naive` | float32 | 1 | 5.36 | 8 | 43 | 12 | 10 |
-| 3D 320^3 | `torch-eager/slicing` | float32 | 1 | 1.72 | 8 | 14 | 4 | 3 |
-| 2D 8192^2 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 146.16 | 1 | 146 | 40 | 33 |
-| 2D 8192^2 | `cupy-cuda-c/tb8` | float32 | 8 | 120.13 | 1 | 120 | 33 | 27 |
-| 2D 8192^2 | `cupy-cuda-c/tb4` | float32 | 4 | 115.42 | 2 | 231 | 64 | 52 |
-| 2D 8192^2 | `cupy-cuda-c/tb3` | float32 | 3 | 89.94 | 2.7 | 240 | 66 | 54 |
-| 2D 8192^2 | `cupy-cuda-c/tb2` | float32 | 2 | 74.60 | 4 | 298 | 83 | 67 |
-| 2D 8192^2 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 53.52 | 4 | 214 | 59 | 48 |
-| 2D 8192^2 | `triton/tile-fp16` | float16 | 1 | 50.74 | 4 | 203 | 56 | 45 |
-| 2D 8192^2 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 50.43 | 4 | 202 | 56 | 45 |
-| 2D 8192^2 | `cupy-cuda-c/ymarch` | float32 | 1 | 32.72 | 8 | 262 | 72 | 58 |
-| 2D 8192^2 | `triton/tile-bf16` | bfloat16 | 1 | 27.50 | 4 | 110 | 30 | 25 |
-| 2D 8192^2 | `triton/tile` | float32 | 1 | 19.69 | 8 | 158 | 44 | 35 |
-| 2D 8192^2 | `cupy-cuda-c/naive` | float32 | 1 | 19.10 | 8 | 153 | 42 | 34 |
-| 2D 8192^2 | `warp/naive` | float32 | 1 | 15.36 | 8 | 123 | 34 | 27 |
-| 2D 8192^2 | `numba/naive` | float32 | 1 | 13.14 | 8 | 105 | 29 | 23 |
+| 3D 512^3 | `cupy-cuda-c/tb3` | float32 | 3 | 94.10 | 2.7 | 251 | 70 | 56 |
+| 3D 512^3 | `cupy-cuda-c/tb4` | float32 | 4 | 92.47 | 2 | 185 | 51 | 41 |
+| 3D 512^3 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 84.81 | 1 | 85 | 23 | 19 |
+| 3D 512^3 | `triton/zmarch-bf16` | bfloat16 | 1 | 78.03 | 4 | 312 | 86 | 70 |
+| 3D 512^3 | `triton/zmarch-fp16` | float16 | 1 | 72.53 | 4 | 290 | 80 | 65 |
+| 3D 512^3 | `cupy-cuda-c/tb2` | float32 | 2 | 66.27 | 4 | 265 | 73 | 59 |
+| 3D 512^3 | `triton/tile-bf16` | bfloat16 | 1 | 57.19 | 4 | 229 | 63 | 51 |
+| 3D 512^3 | `triton/tile-fp16` | float16 | 1 | 56.23 | 4 | 225 | 62 | 50 |
+| 3D 512^3 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 51.90 | 4 | 208 | 58 | 46 |
+| 3D 512^3 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 51.45 | 4 | 206 | 57 | 46 |
+| 3D 512^3 | `numba/zmarch` | float32 | 1 | 40.99 | 8 | 328 | 91 | 73 |
+| 3D 512^3 | `warp/zmarch` | float32 | 1 | 40.19 | 8 | 322 | 89 | 72 |
+| 3D 512^3 | `cupy-cuda-c/zmarch` | float32 | 1 | 40.06 | 8 | 321 | 89 | 72 |
+| 3D 512^3 | `triton/zmarch` | float32 | 1 | 38.33 | 8 | 307 | 85 | 68 |
+| 3D 512^3 | `cupy-cuda-c/naive` | float32 | 1 | 30.57 | 8 | 245 | 68 | 55 |
+| 3D 512^3 | `torch-compile/inductor` | float32 | 1 | 26.24 | 8 | 210 | 58 | 47 |
+| 3D 512^3 | `triton/tile` | float32 | 1 | 24.31 | 8 | 194 | 54 | 43 |
+| 3D 512^3 | `numba/naive` | float32 | 1 | 22.42 | 8 | 179 | 50 | 40 |
+| 3D 512^3 | `warp/naive` | float32 | 1 | 20.79 | 8 | 166 | 46 | 37 |
+| 3D 512^3 | `torch-eager/slicing` | float32 | 1 | 4.55 | 8 | 36 | 10 | 8 |
+| 2D 16384^2 | `cupy-cuda-c/tb4-fp16` | float16 | 4 | 167.87 | 1 | 168 | 47 | 37 |
+| 2D 16384^2 | `cupy-cuda-c/tb8` | float32 | 8 | 157.78 | 1 | 158 | 44 | 35 |
+| 2D 16384^2 | `cupy-cuda-c/tb4` | float32 | 4 | 145.45 | 2 | 291 | 81 | 65 |
+| 2D 16384^2 | `cupy-cuda-c/tb3` | float32 | 3 | 124.82 | 2.7 | 333 | 92 | 74 |
+| 2D 16384^2 | `cupy-cuda-c/tb2` | float32 | 2 | 84.26 | 4 | 337 | 93 | 75 |
+| 2D 16384^2 | `cupy-cuda-c/naive-bf16` | bfloat16 | 1 | 73.56 | 4 | 294 | 82 | 66 |
+| 2D 16384^2 | `cupy-cuda-c/naive-fp16` | float16 | 1 | 71.87 | 4 | 287 | 80 | 64 |
+| 2D 16384^2 | `triton/tile-bf16` | bfloat16 | 1 | 53.18 | 4 | 213 | 59 | 47 |
+| 2D 16384^2 | `triton/tile-fp16` | float16 | 1 | 52.60 | 4 | 210 | 58 | 47 |
+| 2D 16384^2 | `torch-compile/inductor` | float32 | 1 | 45.54 | 8 | 364 | 101 | 81 |
+| 2D 16384^2 | `triton/tile` | float32 | 1 | 45.07 | 8 | 361 | 100 | 80 |
+| 2D 16384^2 | `cupy-cuda-c/naive` | float32 | 1 | 43.76 | 8 | 350 | 97 | 78 |
+| 2D 16384^2 | `cupy-cuda-c/ymarch` | float32 | 1 | 42.49 | 8 | 340 | 94 | 76 |
+| 2D 16384^2 | `numba/naive` | float32 | 1 | 34.46 | 8 | 276 | 76 | 62 |
+| 2D 16384^2 | `warp/naive` | float32 | 1 | 32.20 | 8 | 258 | 71 | 58 |
+| 2D 16384^2 | `torch-eager/slicing` | float32 | 1 | 6.51 | 8 | 52 | 14 | 12 |
 
-Source: `results/dev-provisional.json` (provisional). GB/s uses the minimal traffic model (2 x bytes per value / k per update), so it is a lower bound on real DRAM traffic.
+Source: `results/rtx3070-laptop.json`. GB/s uses the minimal traffic model (2 x bytes per value / k per update), so it is a lower bound on real DRAM traffic.
 <!-- perf-table:end -->
 
 ## How it works

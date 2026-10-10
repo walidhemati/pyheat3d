@@ -327,10 +327,13 @@ In 3D ($\sizeThreeD$) the best single-step variant, \code{\bestSingleThreeDVaria
 implies \bestSingleThreeDBW\,GB/s of DRAM traffic: \bestSingleThreeDPctCopy\% of the measured
 copy bandwidth and \bestSingleThreeDPctSpec\% of the specification. In 2D ($\sizeTwoD$) the best
 is \code{\bestSingleTwoDVariant} with \bestSingleTwoDGLUPS\GLUPS{}
-(\bestSingleTwoDPctCopy\% of copy). \Cref{fig:roofline,tab:perf} show that several Python
-routes (Triton, \code{torch.compile}, and the Warp/Numba z-marching kernels in 3D) land near the
-same ceiling as the hand-written CUDA C. They are separated more by their small-size launch
-overhead (\cref{fig:scaling}) than by their large-size bandwidth. PyTorch eager is far below,
+(\bestSingleTwoDPctCopy\% of copy). \Cref{fig:roofline,tab:perf} show which Python routes reach
+the level of the hand-written CUDA C (\pctCudaTwoD\% of copy in 2D, \pctCudaThreeD\% in 3D). In
+2D, \code{torch.compile} (\pctCompileTwoD\%) and Triton (\pctTritonTwoD\%) do; the plain Warp
+and Numba kernels stop at \pctWarpTwoD\% and \pctNumbaTwoD\%. In 3D the z-marching kernels in
+Numba (\pctNumbaThreeD\%), Warp (\pctWarpThreeD\%) and Triton (\pctTritonThreeD\%) do, while
+\code{torch.compile} reaches \pctCompileThreeD\%. Where they reach it, the Python routes differ
+more in small-size launch overhead (\cref{fig:scaling}) than in large-size bandwidth. PyTorch eager is far below,
 for a structural reason: each of its roughly ten operators is a separate pass over memory. The
 same Python expression handed to \code{torch.compile} runs as one kernel. Against NumPy on the
 16-core CPU the best GPU kernel is \speedupNumpyThreeD$\times$ faster in 3D at
@@ -396,8 +399,11 @@ model $B_{\text{upd}}=2b/k$. ``equiv.'': single-step-equivalent bandwidth $\text
 \paragraph{Why Python gets there.}
 A memory-bound kernel needs three things: coalesced access, enough bytes in flight, and no
 redundant passes. Triton's block model gives the first two by construction. \code{torch.compile}
-gives the third by fusion. Warp and Numba expose plain SIMT, so they reach the roof as soon as
-the indexing is coalesced, and their per-launch overhead is visible only on small grids. The
+gives the third by fusion. Warp and Numba expose plain SIMT: in 3D, once each thread marches
+through $z$ with coalesced rows, they match CUDA C; their simple 2D kernels, without that
+schedule, stay at \pctWarpTwoD--\pctNumbaTwoD\%. Inductor's generic 3D schedule
+(\pctCompileThreeD\%) shows the same point from the other side: the schedule matters, not the
+language. The
 interpreter costs microseconds per launch and nothing per byte. What Python does \emph{not} give
 for free are the explicit shared-memory and warp-shuffle schedules that temporal blocking needs.
 Triton deliberately hides them. For that rung we wrote CUDA C, but compiled and launched it from
@@ -420,9 +426,10 @@ alone could deliver. We base claims on the largest grids.
 (vi) Tile shapes were tuned briefly on a shared GPU and are unlikely to be optimal.
 
 \section{Conclusion}
-For the canonical memory-bound stencil, Python reaches the hardware ceiling: Triton,
-\code{torch.compile}, Warp and Numba kernels run near the copy bandwidth, as hand-written CUDA C
-does. Beyond that ceiling only algorithmic change helps. Temporal blocking raises the update
+For the canonical memory-bound stencil, Python reaches the hardware ceiling: in 2D
+\code{torch.compile} and Triton, in 3D z-marching kernels in Numba, Warp and Triton run at the
+level of hand-written CUDA C, close to the copy bandwidth. Where a Python route falls short, it
+lacks a schedule, not a language feature. Beyond that ceiling only algorithmic change helps. Temporal blocking raises the update
 rate above the single-step roofline by cutting traffic per update. We report it as a change of
 roofline, with its traffic, not as a victory over the hardware.
 
