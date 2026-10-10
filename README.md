@@ -128,6 +128,10 @@ k).
 Source: `results/rtx3070-laptop.json`. GB/s uses the minimal traffic model (2 x bytes per value / k per update), so it is a lower bound on real DRAM traffic.
 <!-- perf-table:end -->
 
+<!-- counterparts:start -->
+Same-GPU head-to-head with pystencils and AN5D (`bench/counterparts.py`, [figure](figures/counterparts.png), **provisional quick run on a shared GPU**): 2D 4096^2: pyheat3d triton/tile 36.7, pystencils tuned 37.6, pyheat3d cupy-cuda-c/tb8 126.7, AN5D 256-10-256 185.1 GLUPS; 3D 256^3: pyheat3d triton/zmarch 36.6, pystencils tuned 29.1, pyheat3d cupy-cuda-c/tb3 64.6, AN5D 32x32-5-128 59.0 GLUPS.
+<!-- counterparts:end -->
+
 ## How it works
 
 1. **NumPy / torch eager.** Slicing expressions; each operator is a full pass over memory.
@@ -149,6 +153,9 @@ Source: `results/rtx3070-laptop.json`. GB/s uses the minimal traffic model (2 x 
 ```bash
 python bench/roofline.py                         # measure copy bandwidth + FP32 FMA peak
 python bench/run.py --full                       # ~15 min on an idle GPU -> results/rtx3070-laptop.json
+python bench/counterparts.py --full              # pystencils + AN5D head-to-head -> results/counterparts.json
+                                                 # (needs ~/python-hpc/_ref sources, the cp-pystencils venv and nvcc;
+                                                 #  setup in the bench/counterparts.py docstring)
 pyheat3d validate --out results/validation.json  # convergence studies (GPU recommended)
 python figures/make_figures.py                   # figures, paper/results.tex, README blocks
 python figures/make_hero.py                      # docs/media/hero.gif

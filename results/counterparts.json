@@ -1,0 +1,622 @@
+{
+ "machine": {
+  "gpu": "NVIDIA GeForce RTX 3070 Laptop GPU",
+  "driver": "595.91.07",
+  "cpu": null,
+  "python": "3.13.2",
+  "numpy": "2.5.3",
+  "torch": "2.7.0+cu126",
+  "triton": "3.3.0",
+  "warp": "1.18.0",
+  "cupy": "13.5.1",
+  "numba": "0.68.0",
+  "numba_cuda": "0.30.4",
+  "date": "2026-10-10T14:35:18+02:00",
+  "nvcc": "13.4.92",
+  "sm": "sm_86"
+ },
+ "provisional": true,
+ "mode": "quick",
+ "ceiling": {
+  "copy_bandwidth_GBs": 361.0,
+  "spec_bandwidth_GBs": 448.0
+ },
+ "traffic_model": "minimal: 8 B / steps_fused per fp32 lattice-site update",
+ "update": {
+  "2": {
+   "c0": 0.09999999999999998,
+   "c1": 0.225,
+   "r": 0.225
+  },
+  "3": {
+   "c0": 0.10000000000000009,
+   "c1": 0.15,
+   "r": 0.15
+  }
+ },
+ "verification": {
+  "sizes": {
+   "2": 200,
+   "3": 70
+  },
+  "steps": 23,
+  "oracle": "pyheat3d.backends.numpy_ref.reference_step (float32)"
+ },
+ "counterparts": {
+  "an5d": {
+   "artifact": "https://github.com/khaki3/AN5D-Artifact",
+   "artifact_commit": "fbebf5f2bb2fa1aae2bfc8fd975947a2ff791752",
+   "generator": "https://github.com/khaki3/AN5D",
+   "generator_commit": "21e1f52041545c65452915f348be99fdefc940ec",
+   "nvcc_flags": [
+    "-O3",
+    "--use_fast_math",
+    "-diag-suppress",
+    "177,186,550",
+    "-gencode=arch=compute_86,code=sm_86"
+   ],
+   "notes": "pre-generated CUDA from the artifact (generator not rebuilt: it needs LLVM/Clang 3.4 and GCC 4.8); coefficients replaced by pyheat3d's; timing = AN5D's own (device-synchronised host clock around the kernel launches, copies excluded)"
+  },
+  "pystencils": {
+   "source": "https://i10git.cs.fau.de/pycodegen/pystencils",
+   "version": "2.1",
+   "sdist": "/home/hemati/python-hpc/_ref/pystencils-2.1-sdist/pystencils-2.1.tar.gz",
+   "sdist_sha256": "d6dd4c1a640435dc27712f7f8db488a25cf644908b321d17161d044161e2b831",
+   "python": "/home/hemati/.venvs/cp-pystencils/bin/python"
+  }
+ },
+ "gpu_state_start": {
+  "sm_clock_MHz": 1290,
+  "mem_clock_MHz": 5501,
+  "temp_C": 54,
+  "power_W": 26.1
+ },
+ "runs": [
+  {
+   "code": "pyheat3d",
+   "variant": "triton/tile",
+   "dims": 2,
+   "size": [
+    4096,
+    4096
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 36.682784402688945,
+   "min": 36.61679338931184,
+   "max": 37.05484116405044,
+   "repeats": 5,
+   "steps_per_repeat": 246,
+   "seconds": [
+    0.11127198299800511,
+    0.11260313299862901,
+    0.11240056400129106,
+    0.11239111599570606,
+    0.11242568099987693
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 293.46227522151156,
+   "pct_copy_bw": 81.29148898102814,
+   "pct_spec_bw": 65.50497214765883,
+   "single_step_equiv_GBs": 293.46227522151156,
+   "x_single_step_roofline": 0.8129148898102814,
+   "gpu_state": {
+    "sm_clock_MHz": 780,
+    "mem_clock_MHz": 5501,
+    "temp_C": 56,
+    "power_W": 50.0
+   },
+   "backend": "triton",
+   "notes": "Triton tiled kernel, float32 storage"
+  },
+  {
+   "code": "pyheat3d",
+   "variant": "cupy-cuda-c/naive",
+   "dims": 2,
+   "size": [
+    4096,
+    4096
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 36.11288993023644,
+   "min": 36.10877912389319,
+   "max": 38.131468084009065,
+   "repeats": 5,
+   "steps_per_repeat": 241,
+   "seconds": [
+    0.10593249300291063,
+    0.11186646499845665,
+    0.11185373100306606,
+    0.11184970400063321,
+    0.11185921099968255
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 288.90311944189153,
+   "pct_copy_bw": 80.02856494235223,
+   "pct_spec_bw": 64.48730344685079,
+   "single_step_equiv_GBs": 288.90311944189153,
+   "x_single_step_roofline": 0.8002856494235222,
+   "gpu_state": {
+    "sm_clock_MHz": 690,
+    "mem_clock_MHz": 5501,
+    "temp_C": 56,
+    "power_W": 61.7
+   },
+   "backend": "cupy-cuda-c",
+   "notes": "CUDA C, one thread per site, float32 storage"
+  },
+  {
+   "code": "pyheat3d",
+   "variant": "cupy-cuda-c/tb4",
+   "dims": 2,
+   "size": [
+    4096,
+    4096
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 4,
+   "metric": "GLUPS",
+   "median": 108.55685008049629,
+   "min": 106.35484057231238,
+   "max": 109.58236827299822,
+   "repeats": 5,
+   "steps_per_repeat": 720,
+   "seconds": [
+    0.11346735000552144,
+    0.11123704799683765,
+    0.11116573400067864,
+    0.11113600800308632,
+    0.11012539800140075
+   ],
+   "bytes_per_unit": 2.0,
+   "effective_GBs": 217.11370016099258,
+   "pct_copy_bw": 60.142299213571356,
+   "pct_spec_bw": 48.46287950022156,
+   "single_step_equiv_GBs": 868.4548006439703,
+   "x_single_step_roofline": 2.405691968542854,
+   "gpu_state": {
+    "sm_clock_MHz": 810,
+    "mem_clock_MHz": 5501,
+    "temp_C": 56,
+    "power_W": 66.1
+   },
+   "backend": "cupy-cuda-c",
+   "notes": "CUDA C temporal blocking, 4 steps per DRAM pass; temporal blocking: per-update traffic is 1/4 of single-step, so its roofline is k times higher"
+  },
+  {
+   "code": "pyheat3d",
+   "variant": "cupy-cuda-c/tb8",
+   "dims": 2,
+   "size": [
+    4096,
+    4096
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 8,
+   "metric": "GLUPS",
+   "median": 126.69596198504824,
+   "min": 119.88441510726189,
+   "max": 126.73974294494244,
+   "repeats": 5,
+   "steps_per_repeat": 880,
+   "seconds": [
+    0.12303130199870793,
+    0.11755445600283565,
+    0.11637656300445087,
+    0.11641296099696774,
+    0.11641677800071193
+   ],
+   "bytes_per_unit": 1.0,
+   "effective_GBs": 126.69596198504824,
+   "pct_copy_bw": 35.09583434488871,
+   "pct_spec_bw": 28.280348657376837,
+   "single_step_equiv_GBs": 1013.5676958803859,
+   "x_single_step_roofline": 2.807666747591097,
+   "gpu_state": {
+    "sm_clock_MHz": 1020,
+    "mem_clock_MHz": 5501,
+    "temp_C": 57,
+    "power_W": 66.3
+   },
+   "backend": "cupy-cuda-c",
+   "notes": "CUDA C temporal blocking, 8 steps per DRAM pass; temporal blocking: per-update traffic is 1/8 of single-step, so its roofline is k times higher"
+  },
+  {
+   "code": "pystencils",
+   "variant": "default",
+   "dims": 2,
+   "size": [
+    4096,
+    4096
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 30.761666346658632,
+   "min": 30.081500515555874,
+   "max": 30.9306149217326,
+   "repeats": 5,
+   "steps_per_repeat": 232,
+   "seconds": [
+    0.12571731799835106,
+    0.12926595699536847,
+    0.12836279699695297,
+    0.12638540800253395,
+    0.12640778000059072
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 246.09333077326906,
+   "pct_copy_bw": 68.16989772112716,
+   "pct_spec_bw": 54.931547047604695,
+   "single_step_equiv_GBs": 246.09333077326906,
+   "x_single_step_roofline": 0.6816989772112716,
+   "gpu_state": {
+    "sm_clock_MHz": 1485,
+    "mem_clock_MHz": 5501,
+    "temp_C": 56,
+    "power_W": 28.0
+   },
+   "backend": "pystencils",
+   "verify_max_abs_err": 1.7881393432617188e-07,
+   "block": null,
+   "warmup_s": 0.2690200949946302,
+   "finite": true,
+   "notes": "runtime-sized fields, pystencils default indexing/block size; cupy 14.2.0"
+  },
+  {
+   "code": "pystencils",
+   "variant": "tuned",
+   "dims": 2,
+   "size": [
+    4096,
+    4096
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 37.610636995222926,
+   "min": 37.59609789916649,
+   "max": 39.961040429362924,
+   "repeats": 5,
+   "steps_per_repeat": 243,
+   "seconds": [
+    0.10192134899989469,
+    0.10748645000421675,
+    0.1083326029984164,
+    0.10830105499917408,
+    0.1082907250020071
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 300.8850959617834,
+   "pct_copy_bw": 83.34767201157435,
+   "pct_spec_bw": 67.1618517771838,
+   "single_step_equiv_GBs": 300.8850959617834,
+   "x_single_step_roofline": 0.8334767201157435,
+   "gpu_state": {
+    "sm_clock_MHz": 1365,
+    "mem_clock_MHz": 5501,
+    "temp_C": 56,
+    "power_W": 53.1
+   },
+   "backend": "pystencils",
+   "verify_max_abs_err": 1.7881393432617188e-07,
+   "block": [
+    32,
+    4,
+    1
+   ],
+   "warmup_s": 0.32551420600066194,
+   "finite": true,
+   "notes": "shape fixed at codegen, block (32, 4, 1) picked by timing; cupy 14.2.0"
+  },
+  {
+   "code": "AN5D",
+   "variant": "star2d1r-256-10-256",
+   "dims": 2,
+   "size": [
+    4096,
+    4096
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 10,
+   "metric": "GLUPS",
+   "median": 185.07436166835296,
+   "min": 182.0021960333414,
+   "max": 189.6779439313731,
+   "repeats": 5,
+   "steps_per_repeat": 984,
+   "seconds": [
+    0.089113708,
+    0.09002894,
+    0.090617932,
+    0.088534244,
+    0.086950872
+   ],
+   "bytes_per_unit": 0.8,
+   "effective_GBs": 148.05948933468238,
+   "pct_copy_bw": 41.01370895697573,
+   "pct_spec_bw": 33.04899315506303,
+   "single_step_equiv_GBs": 1480.5948933468237,
+   "x_single_step_roofline": 4.101370895697572,
+   "gpu_state": {
+    "sm_clock_MHz": 1200,
+    "mem_clock_MHz": 5501,
+    "temp_C": 57,
+    "power_W": 37.9
+   },
+   "backend": "an5d",
+   "verify_max_abs_err": 1.7881393432617188e-07,
+   "notes": "AN5D-generated, bT=10 fused steps per kernel launch (remainder steps with smaller bT)"
+  },
+  {
+   "code": "pyheat3d",
+   "variant": "triton/zmarch",
+   "dims": 3,
+   "size": [
+    256,
+    256,
+    256
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 36.603576417709704,
+   "min": 36.04164753956951,
+   "max": 38.277169752510105,
+   "repeats": 5,
+   "steps_per_repeat": 231,
+   "seconds": [
+    0.09954296900104964,
+    0.09889476699754596,
+    0.10341644599975552,
+    0.10502882199943997,
+    0.10502279100182932
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 292.82861134167763,
+   "pct_copy_bw": 81.11595882040932,
+   "pct_spec_bw": 65.36352931733876,
+   "single_step_equiv_GBs": 292.82861134167763,
+   "x_single_step_roofline": 0.8111595882040932,
+   "gpu_state": {
+    "sm_clock_MHz": 450,
+    "mem_clock_MHz": 5501,
+    "temp_C": 57,
+    "power_W": 65.9
+   },
+   "backend": "triton",
+   "notes": "Triton 2.5D z-marching (register queue), float32 storage"
+  },
+  {
+   "code": "pyheat3d",
+   "variant": "cupy-cuda-c/zmarch",
+   "dims": 3,
+   "size": [
+    256,
+    256,
+    256
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 32.56205042722757,
+   "min": 32.384070897557535,
+   "max": 32.79327612051237,
+   "repeats": 5,
+   "steps_per_repeat": 208,
+   "seconds": [
+    0.10467735499696573,
+    0.1052526509956806,
+    0.10503650699683931,
+    0.10408818299765699,
+    0.10393927399854874
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 260.49640341782055,
+   "pct_copy_bw": 72.1596685367924,
+   "pct_spec_bw": 58.14651862004923,
+   "single_step_equiv_GBs": 260.49640341782055,
+   "x_single_step_roofline": 0.721596685367924,
+   "gpu_state": {
+    "sm_clock_MHz": 930,
+    "mem_clock_MHz": 5501,
+    "temp_C": 57,
+    "power_W": 61.5
+   },
+   "backend": "cupy-cuda-c",
+   "notes": "CUDA C 2.5D blocking: shared-memory plane + register queue"
+  },
+  {
+   "code": "pyheat3d",
+   "variant": "cupy-cuda-c/tb3",
+   "dims": 3,
+   "size": [
+    256,
+    256,
+    256
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 3,
+   "metric": "GLUPS",
+   "median": 64.5700662349168,
+   "min": 63.326701044200554,
+   "max": 64.58430086508112,
+   "repeats": 5,
+   "steps_per_repeat": 420,
+   "seconds": [
+    0.10868349000520539,
+    0.10681242000282509,
+    0.10659067399683408,
+    0.10658203799539478,
+    0.10656718099926366
+   ],
+   "bytes_per_unit": 2.6666666666666665,
+   "effective_GBs": 172.18684329311145,
+   "pct_copy_bw": 47.69718650778711,
+   "pct_spec_bw": 38.43456323506952,
+   "single_step_equiv_GBs": 516.5605298793344,
+   "x_single_step_roofline": 1.4309155952336132,
+   "gpu_state": {
+    "sm_clock_MHz": 765,
+    "mem_clock_MHz": 5501,
+    "temp_C": 58,
+    "power_W": 66.3
+   },
+   "backend": "cupy-cuda-c",
+   "notes": "CUDA C temporal blocking, 3 steps per DRAM pass; temporal blocking: per-update traffic is 1/3 of single-step, so its roofline is k times higher"
+  },
+  {
+   "code": "pystencils",
+   "variant": "default",
+   "dims": 3,
+   "size": [
+    256,
+    256,
+    256
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 20.580751731422808,
+   "min": 20.185657848095264,
+   "max": 20.653609782286914,
+   "repeats": 5,
+   "steps_per_repeat": 138,
+   "seconds": [
+    0.11201120599434944,
+    0.11203077199752443,
+    0.10988008900312707,
+    0.1094954689979204,
+    0.10949247399548767
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 164.64601385138246,
+   "pct_copy_bw": 45.608314086255525,
+   "pct_spec_bw": 36.75134237754072,
+   "single_step_equiv_GBs": 164.64601385138246,
+   "x_single_step_roofline": 0.4560831408625553,
+   "gpu_state": {
+    "sm_clock_MHz": 1395,
+    "mem_clock_MHz": 5501,
+    "temp_C": 57,
+    "power_W": 54.0
+   },
+   "backend": "pystencils",
+   "verify_max_abs_err": 2.384185791015625e-07,
+   "block": null,
+   "warmup_s": 0.3598518270009663,
+   "finite": true,
+   "notes": "runtime-sized fields, pystencils default indexing/block size; cupy 14.2.0"
+  },
+  {
+   "code": "pystencils",
+   "variant": "tuned",
+   "dims": 3,
+   "size": [
+    256,
+    256,
+    256
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 1,
+   "metric": "GLUPS",
+   "median": 29.14494111937922,
+   "min": 29.14179066698006,
+   "max": 29.59170997577045,
+   "repeats": 5,
+   "steps_per_repeat": 223,
+   "seconds": [
+    0.12349118300335249,
+    0.12539775999903213,
+    0.1253849659988191,
+    0.12538420499913627,
+    0.12537966599484207
+   ],
+   "bytes_per_unit": 8.0,
+   "effective_GBs": 233.15952895503375,
+   "pct_copy_bw": 64.58712713435838,
+   "pct_spec_bw": 52.04453771317718,
+   "single_step_equiv_GBs": 233.15952895503375,
+   "x_single_step_roofline": 0.6458712713435838,
+   "gpu_state": {
+    "sm_clock_MHz": 1290,
+    "mem_clock_MHz": 5501,
+    "temp_C": 57,
+    "power_W": 57.1
+   },
+   "backend": "pystencils",
+   "verify_max_abs_err": 2.384185791015625e-07,
+   "block": [
+    128,
+    2,
+    1
+   ],
+   "warmup_s": 0.4015947719963151,
+   "finite": true,
+   "notes": "shape fixed at codegen, block (128, 2, 1) picked by timing; cupy 14.2.0"
+  },
+  {
+   "code": "AN5D",
+   "variant": "star3d1r-32x32-5-128",
+   "dims": 3,
+   "size": [
+    256,
+    256,
+    256
+   ],
+   "dtype": "float32",
+   "bc": "dirichlet",
+   "steps_fused": 5,
+   "metric": "GLUPS",
+   "median": 58.95802407171047,
+   "min": 57.478985088033916,
+   "max": 59.20751597523309,
+   "repeats": 5,
+   "steps_per_repeat": 339,
+   "seconds": [
+    0.096647752,
+    0.09595616900000001,
+    0.09388621600000001,
+    0.09422321700000001,
+    0.093826174
+   ],
+   "bytes_per_unit": 1.6,
+   "effective_GBs": 94.33283851473675,
+   "pct_copy_bw": 26.130980197988023,
+   "pct_spec_bw": 21.056437168468026,
+   "single_step_equiv_GBs": 471.66419257368375,
+   "x_single_step_roofline": 1.306549009899401,
+   "gpu_state": {
+    "sm_clock_MHz": 1470,
+    "mem_clock_MHz": 5501,
+    "temp_C": 58,
+    "power_W": 40.8
+   },
+   "backend": "an5d",
+   "verify_max_abs_err": 2.384185791015625e-07,
+   "notes": "AN5D-generated, bT=5 fused steps per kernel launch (remainder steps with smaller bT)"
+  }
+ ],
+ "gpu_state_end": {
+  "sm_clock_MHz": 1470,
+  "mem_clock_MHz": 5501,
+  "temp_C": 58,
+  "power_W": 40.8
+ },
+ "wall_time_s": 25.546335931001522
+}

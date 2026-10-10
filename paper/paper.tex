@@ -17,6 +17,7 @@
 \hypersetup{colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black}
 
 \newif\ifprovisional
+\newif\ifcpprovisional
 \input{results.tex}
 % Fallbacks so the paper always builds; real values come from results.tex (generated).
 \providecommand{\bestTBTwoDHaloBW}{n/a}\providecommand{\bestTBThreeDHaloBW}{n/a}
@@ -92,6 +93,8 @@ roof.
 \item Temporal-blocking kernels written from Python (3D: shared memory plus warp shuffles with
   register blocking; 2D: warp-synchronous, no shared memory). They exceed the single-step
   roofline, and we explain exactly why this is not the same as exceeding the hardware.
+\item A same-GPU head-to-head with two established stencil codes, the pystencils code
+  generator and AN5D's temporal-blocking CUDA, on the identical update.
 \end{itemize}
 
 \section{Background and related work}
@@ -109,7 +112,9 @@ a thread block holds an $xy$ tile in shared memory and marches along $z$, keepin
 neighbours in registers. Nguyen et al.~\cite{nguyen2010blocking} combined 2.5D spatial
 blocking with temporal blocking (``3.5D'') on CPUs and GPUs. Holewinski, Pouchet and
 Sadayappan~\cite{holewinski2012stencil} generated GPU stencil code with overlapped tiling,
-recomputing halos redundantly instead of synchronising between blocks.
+recomputing halos redundantly instead of synchronising between blocks. pystencils, the code
+generator behind waLBerla~\cite{bauer2019pystencils,bauer2021walberla}, turns symbolic stencil
+updates written in Python into CPU and GPU kernels.
 
 \paragraph{Temporal blocking.}
 Wonnacott's time skewing~\cite{wonnacott2000timeskewing} reorders the iteration space so that
@@ -119,7 +124,8 @@ across cores sharing a cache (wavefront parallelisation). Malas et al.~\cite{mal
 used diamond tiling with multicore wavefronts. Our temporally blocked kernels are a GPU form of
 the wavefront idea: a thread block streams through $z$ and $k$ pipeline stages advance the same
 columns by $k$ time levels, using overlapped (redundant) halos as
-in~\cite{holewinski2012stencil}.
+in~\cite{holewinski2012stencil}. AN5D~\cite{matsumura2020an5d} generates GPU code with
+temporal blocking degrees up to 10 from C loop nests, guided by a performance model.
 
 \paragraph{Python on GPUs.}
 NumPy~\cite{harris2020numpy} defines the array model the others imitate. PyTorch~2's
@@ -361,6 +367,58 @@ pipeline holds $3k$ values per site in registers, and in 3D every stage costs a 
 large $k$ these kernels become instruction-bound rather than bandwidth-bound.
 \Cref{fig:roofline-classic} shows the same data on the classic roofline. Temporal blocking
 moves points to the right (higher intensity); it does not move them above the memory roof.
+
+\ifdefined\cpMode
+\subsection{Head-to-head with established stencil codes}
+\label{sec:counterparts}
+To check our kernels against code written by others, \code{bench/counterparts.py} runs two
+established stencil codes on the same GPU, in the same session as our own variants, with the
+same update (\cref{eq:update}, fp32, Dirichlet, $r=0.9/(2d)$).
+\emph{pystencils}~\cite{bauer2019pystencils} (version \cpPystencilsVersion, CUDA target through
+CuPy) is the Python counterpart of our single-step kernels. We run it as a user would
+(\code{default}: runtime-sized fields, default block size) and tuned (\code{tuned}: shape fixed
+at code generation, block size picked by timing five candidates).
+\emph{AN5D}~\cite{matsumura2020an5d} is the temporal-blocking counterpart. Its generator needs
+LLVM/Clang~3.4 and GCC~4.8, so we use the CUDA code it generated for the published artifact
+(commit \code{\cpAnCommit}, 5-point \code{star2d1r} and 7-point \code{star3d1r}), substitute our
+coefficients, and build it with \code{nvcc} \cpNvcc{} for sm\_86 with the artifact's flags. Its
+configurations were tuned for P100/V100, not for this GPU; we report the best of the shipped
+ones (\cpAnTwoDN{} in 2D and \cpAnThreeDN{} in 3D in this run) and keep AN5D's own timer. Before
+timing, every counterpart matches our NumPy oracle after \cpVerifySteps{} steps on
+$\cpVerifyTwoD^2$ and $\cpVerifyThreeD^3$ grids to $\cpVerifyErr$ (largest absolute deviation,
+data in $[0,1)$), which is fp32 rounding: the codes differ only in summation order.
+\ifcpprovisional{\color{red!60!black} These numbers come from a short run on smaller grids
+($\cpSizeTwoD$, $\cpSizeThreeD$) on a GPU shared with other jobs and are provisional; the
+idle-GPU run \code{bench/counterparts.py --full} at $16384^2$ and $512^3$ replaces them.}\fi
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/counterparts.pdf}
+\caption{Head-to-head on one GPU in one session: our best Python-DSL and CUDA C single-step
+kernels, pystencils (grey), our best temporal-blocking kernel and AN5D's best shipped
+configuration (black). Dashed: single-step fp32 roofline.}
+\label{fig:counterparts}
+\end{figure}
+
+For a single step (\cref{fig:counterparts}), tuned pystencils reaches \cpPsTunedTwoDGLUPS\GLUPS{}
+in 2D (\cpPsTunedTwoDPct\% of copy) and \cpPsTunedThreeDGLUPS\GLUPS{} in 3D
+(\cpPsTunedThreeDPct\%), and \cpPsDefaultTwoDGLUPS{} and \cpPsDefaultThreeDGLUPS\GLUPS{} with its
+defaults. Our best Python-DSL kernels reach \cpPyDslTwoDGLUPS{} (\code{\cpPyDslTwoDVariant}) and
+\cpPyDslThreeDGLUPS\GLUPS{} (\code{\cpPyDslThreeDVariant}). The faster is \cpSingleFasterTwoD{}
+in 2D, by $\cpSingleRatioTwoD\times$, and \cpSingleFasterThreeD{} in 3D, by
+$\cpSingleRatioThreeD\times$. pystencils generates one thread per site; in 3D that is the
+structure of our naive kernels, without the $z$-marching schedule. With temporal blocking, AN5D's
+\code{\cpAnTwoDVariant} ($b_T=\cpAnTwoDK$) reaches \cpAnTwoDGLUPS\GLUPS{}
+($\cpAnTwoDOverRoof\times$ the single-step roof) and \code{\cpAnThreeDVariant}
+($b_T=\cpAnThreeDK$) \cpAnThreeDGLUPS\GLUPS{} ($\cpAnThreeDOverRoof\times$), against
+\cpPyTBTwoDGLUPS{} (\code{\cpPyTBTwoDVariant}) and \cpPyTBThreeDGLUPS\GLUPS{}
+(\code{\cpPyTBThreeDVariant}) for ours. The faster is \cpTBFasterTwoD{} in 2D, by
+$\cpTBRatioTwoD\times$, and \cpTBFasterThreeD{} in 3D, by $\cpTBRatioThreeD\times$. AN5D fuses
+up to ten steps per pass in 2D where our kernels stop at eight, and was designed to keep
+register and shared-memory pressure low at such depths~\cite{matsumura2020an5d}. This rung of
+our ladder is CUDA C launched from Python, so it compares hand-written with generated CUDA, not
+Python with C.
+\fi
 
 \begin{figure}[t]
 \centering
