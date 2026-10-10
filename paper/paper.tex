@@ -403,7 +403,7 @@ configuration (black). Dashed: single-step fp32 roofline.}
 For a single step (\cref{fig:counterparts}), tuned pystencils reaches \cpPsTunedTwoDGLUPS\GLUPS{}
 in 2D (\cpPsTunedTwoDPct\% of copy) and \cpPsTunedThreeDGLUPS\GLUPS{} in 3D
 (\cpPsTunedThreeDPct\%), and \cpPsDefaultTwoDGLUPS{} and \cpPsDefaultThreeDGLUPS\GLUPS{} with its
-defaults. Our best Python-DSL kernels reach \cpPyDslTwoDGLUPS{} (\code{\cpPyDslTwoDVariant}) and
+defaults. Our best Python kernels (DSL or \code{torch.compile}) reach \cpPyDslTwoDGLUPS{} (\code{\cpPyDslTwoDVariant}) and
 \cpPyDslThreeDGLUPS\GLUPS{} (\code{\cpPyDslThreeDVariant}). The faster is \cpSingleFasterTwoD{}
 in 2D, by $\cpSingleRatioTwoD\times$, and \cpSingleFasterThreeD{} in 3D, by
 $\cpSingleRatioThreeD\times$. pystencils generates one thread per site; in 3D that is the
@@ -413,8 +413,8 @@ structure of our naive kernels, without the $z$-marching schedule. With temporal
 ($b_T=\cpAnThreeDK$) \cpAnThreeDGLUPS\GLUPS{} ($\cpAnThreeDOverRoof\times$), against
 \cpPyTBTwoDGLUPS{} (\code{\cpPyTBTwoDVariant}) and \cpPyTBThreeDGLUPS\GLUPS{}
 (\code{\cpPyTBThreeDVariant}) for ours. The faster is \cpTBFasterTwoD{} in 2D, by
-$\cpTBRatioTwoD\times$, and \cpTBFasterThreeD{} in 3D, by $\cpTBRatioThreeD\times$. AN5D fuses
-up to ten steps per pass in 2D where our kernels stop at eight, and was designed to keep
+$\cpTBRatioTwoD\times$, and \cpTBFasterThreeD{} in 3D, by $\cpTBRatioThreeD\times$. AN5D's best 2D configuration fuses
+\cpAnTwoDK{} steps per pass where our kernels stop at eight, and was designed to keep
 register and shared-memory pressure low at such depths~\cite{matsumura2020an5d}. This rung of
 our ladder is CUDA C launched from Python, so it compares hand-written with generated CUDA, not
 Python with C.

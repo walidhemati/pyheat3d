@@ -129,7 +129,7 @@ Source: `results/rtx3070-laptop.json`. GB/s uses the minimal traffic model (2 x 
 <!-- perf-table:end -->
 
 <!-- counterparts:start -->
-Same-GPU head-to-head with pystencils and AN5D (`bench/counterparts.py`, [figure](figures/counterparts.png), **provisional quick run on a shared GPU**): 2D 4096^2: pyheat3d triton/tile 36.7, pystencils tuned 37.6, pyheat3d cupy-cuda-c/tb8 126.7, AN5D 256-10-256 185.1 GLUPS; 3D 256^3: pyheat3d triton/zmarch 36.6, pystencils tuned 29.1, pyheat3d cupy-cuda-c/tb3 64.6, AN5D 32x32-5-128 59.0 GLUPS.
+Same-GPU head-to-head with pystencils and AN5D (`bench/counterparts.py`, [figure](figures/counterparts.png)): 2D 16384^2: pyheat3d torch-compile/inductor 45.5, pystencils tuned 44.6, pyheat3d cupy-cuda-c/tb8 163.5, AN5D 512-13-256 236.6 GLUPS; 3D 512^3: pyheat3d numba/zmarch 41.2, pystencils tuned 32.8, pyheat3d cupy-cuda-c/tb3 94.3, AN5D 32x32-4-128 71.8 GLUPS.
 <!-- counterparts:end -->
 
 ## How it works
